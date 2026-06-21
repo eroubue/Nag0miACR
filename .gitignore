@@ -1,0 +1,14 @@
+PromeRotation_ACR_Development.md
+*.md
+*.log
+*.json
+*.info
+*.cache
+*.targets
+*.props
+*.editorconfig
+*.dll
+*.txt
+/obj
+/.idea
+/docs

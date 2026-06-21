@@ -1,0 +1,37 @@
+﻿<Project Sdk="Dalamud.CN.Net.Sdk/15.0.0">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0-windows</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+
+        <!-- 指定输出目录 -->
+        <OutputPath>C:\Users\ASUS\AppData\Roaming\XIVLauncherCN\pluginConfigs\PromeRotation\ACR\Nag0mi</OutputPath>
+
+        <!-- 不再自动附加 net10.0-windows-->
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        
+    </PropertyGroup>
+
+
+
+    <!-- 这里需要手动引用你的dalamud还有PromeRotation本体以及ECommons（如果你需要用到的话）-->
+    <ItemGroup>
+
+        <Reference Include="ECommons">
+            <HintPath>C:\Users\ASUS\Documents\GitHub\PromeRotation\PromeRotation\bin\x64\Release\ECommons.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+
+
+        <Reference Include="PromeRotation">
+            <HintPath>C:\Users\ASUS\Documents\GitHub\PromeRotation\PromeRotation\bin\x64\Release\PromeRotation.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+    </ItemGroup>
+    <ItemGroup>
+      <PackageReference Remove="DalamudPackager" />
+    </ItemGroup>
+
+</Project>
