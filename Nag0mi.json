@@ -1,0 +1,15 @@
+{
+  "author": "Nag0mi",
+  "version": "1.0",
+  "description": "无情的枪留不住多情的她",
+  "supportedJobs": [
+    {
+      "job": "GNB",
+      "contentScope": "HighEnd"
+    }
+  ],
+  "apiVersion": 15,
+  "referencePromeVersion": "1.5.2.4",
+  "downloadUrl": "https://github.com/eroubue/Nag0miACR/tree/main",
+  "sha256": "29775681fc87ba9db59f8e00e3601f922e9b59b02fdb166956db99b241051c83"
+}
