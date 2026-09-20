@@ -80,7 +80,7 @@ public partial class GunbreakerRotation
     }
 
     // 退避：仅 8 人小队有效；目标为小队内另一个坦克（正常即小队列表2），
-    // 只有自己一个坦克时改为血量最多（百分比最高）的存活队友。
+    // 只有自己一个坦克时改为绝对血量（CurrentHp）最高的存活队友。
     private static void Fire退避()
     {
         var party = PartyHelper.GetParty();
@@ -95,7 +95,7 @@ public partial class GunbreakerRotation
         var target = party.FirstOrDefault(c => c.EntityId != me.EntityId && !c.IsDead
                 && HealerHelper.IsTank((Job)c.ClassJob.RowId))
             ?? party.Where(c => c.EntityId != me.EntityId && !c.IsDead)
-                .OrderByDescending(PartyHelper.GetHpPercent)
+                .OrderByDescending(c => c.CurrentHp)
                 .FirstOrDefault();
         if (target == null)
         {

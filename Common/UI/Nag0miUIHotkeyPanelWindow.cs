@@ -275,12 +275,41 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
     }
 
     // 冷却：顶部暗纱按剩余比例下压 + 居中秒数 + 右下角充能数。
-    // 充能数角标常驻（与游戏内原生热键表现一致, 不再只在充能中显示）。
+    // 充能技能的总冷却是「攒满全部充能」的时长（极光清空两层=120s）, 遮罩与秒数折算成
+    // 「下一层充能」的剩余显示, 与游戏内原生表现一致; 充能数角标常驻右下角, 最后绘制不被遮罩盖住。
     private static void DrawCooldown(ImDrawListPtr drawList, IHotkey hk, Vector2 min, Vector2 max)
     {
         var cd = ActionHelper.GetActionCooldown(hk.ActionId);
         var charges = ActionHelper.GetActionCharges(hk.ActionId);
         var maxCharges = Math.Max(1, ActionHelper.GetMaxCharges(hk.ActionId));
+
+        if (cd > 0f && ActionHelper.IsActionRecharging(cd, charges, maxCharges))
+        {
+            var recast = ActionHelper.GetActionRecastTime(hk.ActionId);
+            if (recast > 0.001f)
+            {
+                // 单层充能时长 = 总复唱 / 最大充能; 缺失层数 = 最大充能 - 当前整层数
+                var perCharge = recast / maxCharges;
+                var missing = Math.Max(1, maxCharges - (int)MathF.Floor(charges + 0.001f));
+                var next = Math.Clamp(cd - (missing - 1) * perCharge, 0.001f, perCharge);
+                var progress = Math.Clamp(next / perCharge, 0f, 1f);
+
+                var veilMax = new Vector2(max.X, min.Y + (max.Y - min.Y) * progress);
+                drawList.AddRectFilled(min, veilMax,
+                    SimplePalette.ToU32(new Vector4(0.1f, 0.1f, 0.1f, 0.6f)), 圆角 - 1f, ImDrawFlags.RoundCornersTop);
+
+                if (next > 0.05f)
+                {
+                    var text = ((int)MathF.Ceiling(next)).ToString();
+                    const float fontScale = 1.1f;
+                    var fontSize = ImGui.GetFontSize() * fontScale;
+                    var ts = ImGui.CalcTextSize(text) * fontScale;
+                    var tp = (min + max) * 0.5f - ts * 0.5f;
+                    drawList.AddText(ImGui.GetFont(), fontSize, tp + new Vector2(1f, 1f), 4278190080u, text);
+                    drawList.AddText(ImGui.GetFont(), fontSize, tp, 4294967295u, text);
+                }
+            }
+        }
 
         if (maxCharges > 1)
         {
@@ -292,28 +321,6 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
                 SimplePalette.ToU32(new Vector4(0.1f, 0.1f, 0.1f, 0.85f)), 5f);
             drawList.AddText(ImGui.GetFont(), ImGui.GetFontSize(), ntp,
                 SimplePalette.ToU32(SimplePalette.TextPrimary), nText);
-        }
-
-        if (cd <= 0f) return;
-        if (!ActionHelper.IsActionRecharging(cd, charges, maxCharges)) return;
-
-        var recast = ActionHelper.GetActionRecastTime(hk.ActionId);
-        if (recast <= 0.001f) return;
-        var progress = Math.Clamp(cd / recast, 0f, 1f);
-
-        var veilMax = new Vector2(max.X, min.Y + (max.Y - min.Y) * progress);
-        drawList.AddRectFilled(min, veilMax,
-            SimplePalette.ToU32(new Vector4(0.1f, 0.1f, 0.1f, 0.6f)), 圆角 - 1f, ImDrawFlags.RoundCornersTop);
-
-        if (cd > 0.05f)
-        {
-            var text = ((int)MathF.Ceiling(cd)).ToString();
-            const float fontScale = 1.1f;
-            var fontSize = ImGui.GetFontSize() * fontScale;
-            var ts = ImGui.CalcTextSize(text) * fontScale;
-            var tp = (min + max) * 0.5f - ts * 0.5f;
-            drawList.AddText(ImGui.GetFont(), fontSize, tp + new Vector2(1f, 1f), 4278190080u, text);
-            drawList.AddText(ImGui.GetFont(), fontSize, tp, 4294967295u, text);
         }
     }
 
