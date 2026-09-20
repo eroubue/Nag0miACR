@@ -9,6 +9,6 @@ public sealed class CustomHotkeyEntry
 {
     public string Name = "";
     public uint SkillId;
-    public ActionType Type = ActionType.OffGcd;
+    public ActionType Type = ActionType.OffGcd;   // 宿主技能类型枚举（Gcd/OffGcd）
     public CustomHotkeyTarget Target = CustomHotkeyTarget.Self;
 }

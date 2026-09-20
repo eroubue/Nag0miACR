@@ -278,15 +278,17 @@ public static class Nag0miUISettingsUI
         ImGui.TextWrapped("选择技能与目标后点击添加，生成一个自定义热键按钮；显隐与排序与内置热键相同。");
 
         var skillNames = skills.Select(k => k.Name).ToArray();
+        var targets = CustomHotkeyTargets.Selectable;
+        var targetNames = targets.Select(CustomHotkeyTargets.Label).ToArray();
         _自定义技能索引 = Math.Clamp(_自定义技能索引, 0, skillNames.Length - 1);
-        _自定义目标索引 = Math.Clamp(_自定义目标索引, 0, CustomHotkeyTargets.Labels.Length - 1);
+        _自定义目标索引 = Math.Clamp(_自定义目标索引, 0, targets.Length - 1);
         SettingRow.Combo("自定义技能", ref _自定义技能索引, skillNames);
-        SettingRow.Combo("自定义目标", ref _自定义目标索引, CustomHotkeyTargets.Labels);
+        SettingRow.Combo("自定义目标", ref _自定义目标索引, targetNames);
 
         if (SettingRow.Button("添加自定义热键", "按当前下拉选择生成一个自定义热键按钮"))
         {
             var skill = skills[_自定义技能索引];
-            var target = (CustomHotkeyTarget)_自定义目标索引;
+            var target = targets[_自定义目标索引];
             var name = CustomHotkeyTargets.GenerateUniqueName(
                 $"{skill.Name}·{CustomHotkeyTargets.Label(target)}", s.GetOrderedHotkeyNames());
             s.CustomHotkeys.Add(new CustomHotkeyEntry

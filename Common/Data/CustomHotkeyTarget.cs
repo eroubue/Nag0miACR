@@ -37,6 +37,27 @@ public static class CustomHotkeyTargets
 
     public static string Label(CustomHotkeyTarget target) => Labels[(int)target];
 
+    // 设置页下拉框的可选目标（死亡队友不提供新建, 不在选项中; 枚举成员保留以兼容旧配置）。
+    // 下标签引以本数组为准, 与枚举底层值无关。
+    public static readonly CustomHotkeyTarget[] Selectable =
+    [
+        CustomHotkeyTarget.Self,
+        CustomHotkeyTarget.Target,
+        CustomHotkeyTarget.TargetOfTarget,
+        CustomHotkeyTarget.LowestHpTank,
+        CustomHotkeyTarget.LowestHpHealer,
+        CustomHotkeyTarget.LowestHpDps,
+        CustomHotkeyTarget.LowestHpParty,
+        CustomHotkeyTarget.MouseOver,
+        CustomHotkeyTarget.Party2,
+        CustomHotkeyTarget.Party3,
+        CustomHotkeyTarget.Party4,
+        CustomHotkeyTarget.Party5,
+        CustomHotkeyTarget.Party6,
+        CustomHotkeyTarget.Party7,
+        CustomHotkeyTarget.Party8,
+    ];
+
     // 可直接映射到宿主 ActionTargetType 的返回其底层 int
     // (Self=0, Target=1, TargetOfTarget=2, MouseOver=4, LowestHealthPartyMember=5, PartyMember2..8=6..12)；
     // 需自解析的（最低血量按职能/死亡队友）返回 null。以 int 返回保持本文件无 SDK 依赖。

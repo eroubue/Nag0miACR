@@ -1,11 +1,15 @@
 using ECommons.DalamudServices;
+using ECommons.ExcelServices;
 using ECommons.Logging;
 using Nag0mi.Common.Data;
 using Nag0mi.Common.Helper;
 using Nag0mi.Common.UI;
 using Nag0mi.Gunbreaker.Control;
 using Nag0mi.Gunbreaker.Data;
+using PromeRotation.Core;
 using PromeRotation.Data;
+using PromeRotation.Helpers;
+using PromeRotation.Managers;
 using PromeRotation.UI.HotKey;
 
 namespace Nag0mi.Gunbreaker;
@@ -16,8 +20,7 @@ public partial class GunbreakerRotation
 {
     private static readonly string[] HotkeyNames =
     [
-        "挑衅", "退避", "亲疏自行", "雪仇", "铁壁", "星云", "伪装", "光之心",
-        "极光", "刚玉之心", "超火流星", GunbreakerQT.爆发,
+        "挑衅", "退避", "亲疏自行",
     ];
 
     // 自定义热键的技能下拉清单（限定范围：极光 / 刚玉之心 / 石之心(低等级形态)）
@@ -72,20 +75,37 @@ public partial class GunbreakerRotation
     private static void BuildHotkeys(Nag0miUIHotkeyBuilder builder)
     {
         builder.Fixed("挑衅", GunbreakerSkill.挑衅, ActionType.OffGcd, ActionTargetType.Target);
-        builder.Fixed("退避", GunbreakerSkill.退避, ActionType.OffGcd, ActionTargetType.PartyMember2);
+        builder.Execute("退避", new ExecuteLogic(Fire退避), GunbreakerSkill.退避);
         builder.Fixed("亲疏自行", GunbreakerSkill.亲疏自行, ActionType.OffGcd, ActionTargetType.Self);
-        builder.Fixed("雪仇", GunbreakerSkill.雪仇, ActionType.OffGcd, ActionTargetType.Self);
-        builder.Fixed("铁壁", GunbreakerSkill.铁壁, ActionType.OffGcd, ActionTargetType.Self);
-        builder.Fixed("星云", GunbreakerSkill.星云, ActionType.OffGcd, ActionTargetType.Self);
-        builder.Fixed("伪装", GunbreakerSkill.伪装, ActionType.OffGcd, ActionTargetType.Self);
-        builder.Fixed("光之心", GunbreakerSkill.光之心, ActionType.OffGcd, ActionTargetType.Self);
-        builder.Fixed("极光", GunbreakerSkill.极光, ActionType.OffGcd, ActionTargetType.Self);
-        builder.Fixed("刚玉之心", GunbreakerSkill.刚玉之心, ActionType.OffGcd, ActionTargetType.Self);
-        builder.Fixed("超火流星", GunbreakerSkill.超火流星, ActionType.OffGcd, ActionTargetType.Self);
-        builder.Execute(GunbreakerQT.爆发, new ToggleLogic(
-            () => PromeSettings.Instance.GetQt(GunbreakerQT.爆发),
-            () => Nag0miUIFramework.设置QT(GunbreakerQT.爆发, !PromeSettings.Instance.GetQt(GunbreakerQT.爆发))),
-            GunbreakerSkill.无情);
+    }
+
+    // 退避：仅 8 人小队有效；目标为小队内另一个坦克（正常即小队列表2），
+    // 只有自己一个坦克时改为血量最多（百分比最高）的存活队友。
+    private static void Fire退避()
+    {
+        var party = PartyHelper.GetParty();
+        if (party.Count != 8)
+        {
+            HintHelper.ShowToast2("退避：仅 8 人小队有效", 2, HintHelper.HintType.Info);
+            return;
+        }
+        var me = Core.Me;
+        if (me == null) return;
+
+        var target = party.FirstOrDefault(c => c.EntityId != me.EntityId && !c.IsDead
+                && HealerHelper.IsTank((Job)c.ClassJob.RowId))
+            ?? party.Where(c => c.EntityId != me.EntityId && !c.IsDead)
+                .OrderByDescending(PartyHelper.GetHpPercent)
+                .FirstOrDefault();
+        if (target == null)
+        {
+            HintHelper.ShowToast2("退避：没有有效目标", 2, HintHelper.HintType.Info);
+            return;
+        }
+        HotkeyQueueManager.TryEnqueue(new PAction(GunbreakerSkill.退避, ActionType.OffGcd, ActionTargetType.Self)
+        {
+            NetworkTid = (uint)target.EntityId,
+        });
     }
 
     // ============================================================

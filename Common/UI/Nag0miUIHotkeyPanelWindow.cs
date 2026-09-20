@@ -41,6 +41,9 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
 
     private bool 位置已恢复;
     private bool 面板拖动中;
+
+    // 自定义热键名 → 目标类型（角标数据源; 设置变更会重建本窗口, 与设置保持一致）
+    private readonly Dictionary<string, CustomHotkeyTarget> 目标角标表 = new(StringComparer.Ordinal);
     // 左键按压状态：起点在本窗内的按压才允许转拖动（防从别的窗口按住拖过本窗时劫持）;
     // 按压后移动超阈值即转拖动面板，松手当帧的格子点击被抑制（不触发热键）。
     // 拖动期间不再要求悬停——快速甩动鼠标逃出窗口一帧也不会断拖。
@@ -65,6 +68,8 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
         this.columns = Math.Max(1, columns);
         this.tile = MathF.Max(24f, tile);
         this.spacing = Math.Clamp(spacing, 0f, 20f);
+        foreach (var c in Nag0miUISettings.Instance.CustomHotkeys)
+            目标角标表.TryAdd(c.Name, c.Target);
         RespectCloseHotkey = false;
         AllowBackgroundBlur = false;
         DisableWindowSounds = true;
@@ -256,6 +261,10 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
             DrawCooldown(drawList, hk, min, max);
         }
 
+        // 自定义热键目标角标（画在状态覆盖层之后、描边之前, 不被冷却罩遮挡）
+        if (目标角标表.TryGetValue(name, out var 角标目标))
+            DrawTargetBadge(drawList, 角标目标, min, max);
+
         // 描边：平时 BorderStrong（20%），悬停提亮到主文字色 40%
         drawList.AddRect(min, max,
             SimplePalette.ToU32(hovered ? SimplePalette.WithAlpha(SimplePalette.TextPrimary, 0.40f)
@@ -265,13 +274,27 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
         if (hovered) ImGui.SetTooltip(name);
     }
 
-    // 冷却：顶部暗纱按剩余比例下压 + 居中秒数 + 多充能未满时右下角充能数。
+    // 冷却：顶部暗纱按剩余比例下压 + 居中秒数 + 右下角充能数。
+    // 充能数角标常驻（与游戏内原生热键表现一致, 不再只在充能中显示）。
     private static void DrawCooldown(ImDrawListPtr drawList, IHotkey hk, Vector2 min, Vector2 max)
     {
         var cd = ActionHelper.GetActionCooldown(hk.ActionId);
-        if (cd <= 0f) return;
         var charges = ActionHelper.GetActionCharges(hk.ActionId);
         var maxCharges = Math.Max(1, ActionHelper.GetMaxCharges(hk.ActionId));
+
+        if (maxCharges > 1)
+        {
+            var n = Math.Clamp((int)MathF.Floor(charges + 0.001f), 0, maxCharges);
+            var nText = n.ToString();
+            var nts = ImGui.CalcTextSize(nText);
+            var ntp = max - nts - new Vector2(5f, 3f);
+            drawList.AddRectFilled(ntp - new Vector2(4f, 1f), max - new Vector2(1f),
+                SimplePalette.ToU32(new Vector4(0.1f, 0.1f, 0.1f, 0.85f)), 5f);
+            drawList.AddText(ImGui.GetFont(), ImGui.GetFontSize(), ntp,
+                SimplePalette.ToU32(SimplePalette.TextPrimary), nText);
+        }
+
+        if (cd <= 0f) return;
         if (!ActionHelper.IsActionRecharging(cd, charges, maxCharges)) return;
 
         var recast = ActionHelper.GetActionRecastTime(hk.ActionId);
@@ -292,18 +315,45 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
             drawList.AddText(ImGui.GetFont(), fontSize, tp + new Vector2(1f, 1f), 4278190080u, text);
             drawList.AddText(ImGui.GetFont(), fontSize, tp, 4294967295u, text);
         }
+    }
 
-        if (maxCharges > 1)
+    // 目标角标配色（自定义热键）
+    private static readonly Vector4 角标蓝 = new(0.30f, 0.55f, 1.00f, 1f);   // 小队数字 / 坦克
+    private static readonly Vector4 角标绿 = new(0.30f, 0.85f, 0.45f, 1f);   // 治疗
+    private static readonly Vector4 角标红 = new(0.92f, 0.30f, 0.32f, 1f);   // 输出
+    private static readonly Vector4 角标黄 = new(1.00f, 0.85f, 0.25f, 1f);   // 不限定职业
+
+    // 自定义热键的目标角标：小队成员2-8 → 左上角蓝色数字;
+    // 血量最低的坦克/奶妈/输出/队友 → 正上方 HP LOW（蓝/绿/红/黄, 带黑影保可读）。
+    private static void DrawTargetBadge(ImDrawListPtr drawList, CustomHotkeyTarget target, Vector2 min, Vector2 max)
+    {
+        const float fontScale = 0.72f;
+        var fontSize = ImGui.GetFontSize() * fontScale;
+
+        if (target >= CustomHotkeyTarget.Party2)
         {
-            var n = Math.Clamp((int)MathF.Floor(charges + 0.001f), 0, maxCharges);
-            var nText = n.ToString();
-            var ts = ImGui.CalcTextSize(nText);
-            var tp = max - ts - new Vector2(5f, 3f);
-            drawList.AddRectFilled(tp - new Vector2(4f, 1f), max - new Vector2(1f),
-                SimplePalette.ToU32(new Vector4(0.1f, 0.1f, 0.1f, 0.85f)), 5f);
-            drawList.AddText(ImGui.GetFont(), ImGui.GetFontSize(), tp,
-                SimplePalette.ToU32(SimplePalette.TextPrimary), nText);
+            var num = ((int)target - (int)CustomHotkeyTarget.Party2 + 2).ToString();
+            var pos = min + new Vector2(3f, 1f);
+            drawList.AddText(ImGui.GetFont(), fontSize, pos + new Vector2(1f, 1f), 4278190080u, num);
+            drawList.AddText(ImGui.GetFont(), fontSize, pos, SimplePalette.ToU32(角标蓝), num);
+            return;
         }
+
+        var color = target switch
+        {
+            CustomHotkeyTarget.LowestHpTank => 角标蓝,
+            CustomHotkeyTarget.LowestHpHealer => 角标绿,
+            CustomHotkeyTarget.LowestHpDps => 角标红,
+            CustomHotkeyTarget.LowestHpParty => 角标黄,
+            _ => Vector4.Zero,
+        };
+        if (color.W <= 0f) return;
+
+        const string text = "HP LOW";
+        var ts = ImGui.CalcTextSize(text) * fontScale;
+        var tp = new Vector2((min.X + max.X - ts.X) * 0.5f, min.Y + 1f);
+        drawList.AddText(ImGui.GetFont(), fontSize, tp + new Vector2(1f, 1f), 4278190080u, text);
+        drawList.AddText(ImGui.GetFont(), fontSize, tp, SimplePalette.ToU32(color), text);
     }
 
     // ============================================================

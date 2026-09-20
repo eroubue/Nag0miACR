@@ -275,7 +275,7 @@ public class Nag0miUISettings
     };
 
     // 配置目录（稳定路径，与进程无关）：
-    // 插件配置目录\PromeRotation\Settings\ACRConfig\Nag0mi——宿主 ACRAuthorSetting 按作者约定的
+    // 插件配置目录\(宿主)\Settings\ACRConfig\Nag0mi——宿主 ACRAuthorSetting 按作者约定的
     // 配置目录; 作者身份经 Nag0miUIJobEnv.Configure 注入（固定为「Nag0mi」,
     // 与 RotationMetadata 的 Author 一致）; 目录不存在时由 FilePath 首次访问自动建。
     public static string SettingsDirectory
@@ -402,6 +402,18 @@ public class Nag0miUISettings
                 dict.Remove(k);
         // QtOrder 修剪: 当前职业 QT 表已不存在的键剔除、重复项去重
         s.QtOrder = s.QtOrder.Where(qt.ContainsKey).Distinct().ToList();
+        // 死亡队友目标已下线: 剔除使用它的自定义热键(旧配置残留), 并清理其显隐/排序记录
+        var deadNames = s.CustomHotkeys.Where(c => c.Target == CustomHotkeyTarget.DeadParty)
+            .Select(c => c.Name).ToList();
+        if (deadNames.Count > 0)
+        {
+            s.CustomHotkeys.RemoveAll(c => c.Target == CustomHotkeyTarget.DeadParty);
+            foreach (var n in deadNames)
+            {
+                s.HiddenHotkeys.Remove(n);
+                s.HotkeyOrder.Remove(n);
+            }
+        }
         // CustomHotkeys 去重：空名/同名条目只留第一条（名字是排序/显隐/ImGui ID 的键, 防手改 JSON 出重名）
         var customSeen = new HashSet<string>(StringComparer.Ordinal);
         s.CustomHotkeys = s.CustomHotkeys

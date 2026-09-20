@@ -35,6 +35,14 @@ internal static class CustomHotkeyTargetTests
         Check.Equal("极光·目标·2", CustomHotkeyTargets.GenerateUniqueName("极光·目标", new[] { "极光·目标" }));
         Check.Equal("极光·目标·3",
             CustomHotkeyTargets.GenerateUniqueName("极光·目标", new[] { "极光·目标", "极光·目标·2" }));
+
+        // 下拉选项：不含死亡队友, 其余全在且顺序固定
+        Check.Equal(15, CustomHotkeyTargets.Selectable.Length);
+        Check.True(!CustomHotkeyTargets.Selectable.Contains(CustomHotkeyTarget.DeadParty));
+        Check.Equal(CustomHotkeyTarget.Self, CustomHotkeyTargets.Selectable[0]);
+        Check.Equal(CustomHotkeyTarget.LowestHpParty, CustomHotkeyTargets.Selectable[6]);
+        Check.Equal(CustomHotkeyTarget.MouseOver, CustomHotkeyTargets.Selectable[7]);
+        Check.Equal(CustomHotkeyTarget.Party8, CustomHotkeyTargets.Selectable[14]);
         Console.WriteLine("PASS: custom hotkey target labels, native mapping, unique naming");
     }
 }
