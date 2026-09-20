@@ -43,11 +43,12 @@ public static class Nag0miUIFramework
         (string label, System.Action draw)[]? extraTabs = null,
         System.Action? cycleMode = null,
         Func<string>? currentModeLabel = null,
-        (uint Id, string Name, PromeRotation.Data.ActionType Type)[]? customHotkeySkills = null)
+        (uint Id, string Name, PromeRotation.Data.ActionType Type)[]? customHotkeySkills = null,
+        IReadOnlyDictionary<uint, (uint BuffId, bool SelfOnly)>? hotkeyActiveBuffs = null)
         => Nag0miUIJobEnv.Configure(jobTag, jobName, qtAll, qtIsMetaKey, qtIsVisibleInMode,
             qtDefault, qtCascadeRules, hotkeyNames, buildHotkeys, qtTab基础, qtTab技能, qtTab资源,
             modeCount, modeNames, author, qtIconResolver, qtDefaultVisible, extraTabs, cycleMode, currentModeLabel,
-            customHotkeySkills);
+            customHotkeySkills, hotkeyActiveBuffs);
 
     /// <summary>注册全部窗口并完成初始化：接管宿主设置窗、加入控制条/设置窗/QT面板、
     /// 构建热键面板、重建 QT、压制宿主自带面板。幂等，重复调用会先卸载再注册。OnEnterAcr 调用。</summary>

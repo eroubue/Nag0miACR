@@ -23,6 +23,11 @@
       <PackageReference Include="PromeRotation.SDK.CNGL" Version="0.1.0-preview.3" />
       <Compile Remove="Tests/**/*.cs;artifacts/**/*.cs;obj/**/*.cs;bin/**/*.cs" />
     </ItemGroup>
+
+    <!-- 面板贴图素材随构建复制到输出目录，运行时从程序集旁 UI\ 子目录加载 -->
+    <ItemGroup>
+      <None Include="Common\UI\*.png" Link="UI\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
     <ItemGroup>
       <Folder Include="Gunbreaker\Timeline\" />
     </ItemGroup>

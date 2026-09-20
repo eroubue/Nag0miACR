@@ -52,6 +52,11 @@ internal static class Nag0miUIJobEnv
     public static (uint Id, string Name, PromeRotation.Data.ActionType Type)[] CustomHotkeySkills { get; private set; }
         = Array.Empty<(uint, string, PromeRotation.Data.ActionType)>();
 
+    /// <summary>热键「激活中」金框映射：技能id → (buffId, 是否仅看自身)。
+    /// 对应 buff 未结束时，热键面板给该格盖 activeaction 贴图框；目标型 buff 看自己+任意队友。</summary>
+    public static IReadOnlyDictionary<uint, (uint BuffId, bool SelfOnly)> HotkeyActiveBuffs { get; private set; }
+        = new Dictionary<uint, (uint, bool)>();
+
     /// <summary>热键面板条目构建委托。框架不预置任何按钮，全部条目由使用方在此注册。</summary>
     public static System.Action<Nag0miUIHotkeyBuilder>? BuildHotkeys { get; private set; }
 
@@ -100,7 +105,8 @@ internal static class Nag0miUIJobEnv
         (string label, System.Action draw)[]? extraTabs = null,
         System.Action? cycleMode = null,
         Func<string>? currentModeLabel = null,
-        (uint Id, string Name, PromeRotation.Data.ActionType Type)[]? customHotkeySkills = null)
+        (uint Id, string Name, PromeRotation.Data.ActionType Type)[]? customHotkeySkills = null,
+        IReadOnlyDictionary<uint, (uint BuffId, bool SelfOnly)>? hotkeyActiveBuffs = null)
     {
         JobTag = jobTag;
         JobName = jobName;
@@ -123,5 +129,6 @@ internal static class Nag0miUIJobEnv
         CycleMode = cycleMode;
         CurrentModeLabel = currentModeLabel;
         CustomHotkeySkills = customHotkeySkills ?? Array.Empty<(uint, string, PromeRotation.Data.ActionType)>();
+        HotkeyActiveBuffs = hotkeyActiveBuffs ?? new Dictionary<uint, (uint, bool)>();
     }
 }

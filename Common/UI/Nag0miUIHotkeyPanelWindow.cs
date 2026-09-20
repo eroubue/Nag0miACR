@@ -2,9 +2,11 @@
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Textures;
+using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Interface.Windowing;
 using ECommons.DalamudServices;
 using Nag0mi.Common.Data;
+using PromeRotation.Core;
 using PromeRotation.Data;
 using PromeRotation.Extensions;
 using PromeRotation.Helpers;
@@ -16,7 +18,9 @@ namespace Nag0mi.Common.UI;
 
 // Nag0miUI 风格热键面板：窗口外壳（NoBackground + 窗口自身绘制列表圆角底 +
 // 每帧按网格精确尺寸），图标/冷却/充能/队列待发用宿主公开件渲染
-// （IHotkey/ActionHotkey/DelegateHotkey + IconHelper/ActionHelper/HotkeyQueueManager）。
+// （IHotkey/ActionHotkey/DelegateHotkey + IconHelper/ActionHelper/HotkeyQueueManager）;
+// 冷却/充能进度为圆圈进度条 + 居中秒数, 充能数/目标角标/激活金框用 UI\ 贴图
+// （Charge0-3 / Num2-8 / 062xxx / activeaction, 随构建复制到程序集旁, 缺失退化文字）。
 // 右键按住实时交换排序（SwapOrderHelper）, 松手写回 Nag0miUISettings.HotkeyOrder 并落盘;
 // 左键按住窗口内任意位置（格子或缝隙）拖动整个面板——格子上的点击与拖动按位移阈值区分,
 // 超阈值转拖动后松手不触发热键, 位置落盘。
@@ -272,12 +276,55 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
                                         : SimplePalette.BorderStrong),
             圆角, ImDrawFlags.RoundCornersAll, 1.2f);
 
+        // 已释放且 buff 未结束：activeaction 金框盖在最上层
+        if (hk.ActionId != 0 && 技能激活中(hk.ActionId))
+        {
+            var activeTex = 取贴图("activeaction.png");
+            if (activeTex != null)
+                drawList.AddImage(activeTex.Handle, min - new Vector2(1.5f), max + new Vector2(1.5f));
+        }
+
         if (hovered) ImGui.SetTooltip(name);
     }
 
-    // 冷却：顶部暗纱按剩余比例下压 + 居中秒数 + 右下角充能数。
-    // 充能技能的总冷却是「攒满全部充能」的时长（极光清空两层=120s）, 遮罩与秒数折算成
-    // 「下一层充能」的剩余显示, 与游戏内原生表现一致; 充能数角标常驻右下角, 最后绘制不被遮罩盖住。
+    // 技能激活判定：技能对应的 buff 仍在生效（见 Nag0miUIJobEnv.HotkeyActiveBuffs 映射）。
+    // 自身类 buff 只看自己; 目标型 buff（极光/刚玉之心/石之心）看自己或任意存活队友——
+    // 施放后目标可能变化, 按「谁还带着这个 buff」判定最贴近实际表现。
+    private static bool 技能激活中(uint actionId)
+    {
+        if (!Nag0miUIJobEnv.HotkeyActiveBuffs.TryGetValue(actionId, out var map)) return false;
+        var me = Core.Me;
+        if (me == null) return false;
+        if (me.HasStatus(map.BuffId)) return true;
+        if (map.SelfOnly) return false;
+        foreach (var c in PartyHelper.GetParty())
+            if (!c.IsDead && c.HasStatus(map.BuffId)) return true;
+        return false;
+    }
+
+    // 面板贴图（程序集旁 UI\ 子目录, 随构建复制）: 惰性加载并缓存, 失败缓存 null 不再重试。
+    private static readonly Dictionary<string, IDalamudTextureWrap?> 贴图缓存 = new(StringComparer.OrdinalIgnoreCase);
+
+    private static IDalamudTextureWrap? 取贴图(string fileName)
+    {
+        if (贴图缓存.TryGetValue(fileName, out var cached)) return cached;
+        IDalamudTextureWrap? wrap = null;
+        try
+        {
+            var dir = Path.GetDirectoryName(typeof(Nag0miUIHotkeyPanelWindow).Assembly.Location);
+            var path = dir == null ? null : Path.Combine(dir, "UI", fileName);
+            if (path != null && File.Exists(path))
+                wrap = Svc.Texture.GetFromFile(path)?.GetWrapOrDefault(null);
+        }
+        catch (Exception e) { Svc.Log.Warning($"[{Nag0miUIJobEnv.作者}] 贴图加载失败 {fileName}: {e.Message}"); }
+        贴图缓存[fileName] = wrap;
+        return wrap;
+    }
+
+    // 冷却/充能进度：圆圈进度条（顶部起顺时针, 弧长 = 剩余比例, 随时间消减）+ 居中秒数。
+    // 充能技能的总冷却是「攒满全部充能」的时长（极光清空两层=120s）, 进度与秒数折算成
+    // 「下一层充能」的剩余显示, 与游戏内原生表现一致; 充能数角标常驻右下角（Charge0-3.png）,
+    // 最后绘制不被进度环盖住, 贴图缺失退化回文字角标。
     private static void DrawCooldown(ImDrawListPtr drawList, IHotkey hk, Vector2 min, Vector2 max)
     {
         var cd = ActionHelper.GetActionCooldown(hk.ActionId);
@@ -295,9 +342,16 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
                 var next = Math.Clamp(cd - (missing - 1) * perCharge, 0.001f, perCharge);
                 var progress = Math.Clamp(next / perCharge, 0f, 1f);
 
-                var veilMax = new Vector2(max.X, min.Y + (max.Y - min.Y) * progress);
-                drawList.AddRectFilled(min, veilMax,
-                    SimplePalette.ToU32(new Vector4(0.1f, 0.1f, 0.1f, 0.6f)), 圆角 - 1f, ImDrawFlags.RoundCornersTop);
+                var center = (min + max) * 0.5f;
+                var radius = (max.X - min.X) * 0.5f - 2.5f;
+                const float 线宽 = 3f;
+                drawList.AddCircle(center, radius,
+                    SimplePalette.ToU32(new Vector4(0.1f, 0.1f, 0.1f, 0.55f)), 0, 线宽);
+                var a0 = -MathF.PI * 0.5f;
+                drawList.PathArcTo(center, radius, a0, a0 + progress * MathF.PI * 2f, 0);
+                drawList.PathStroke(
+                    SimplePalette.ToU32(SimplePalette.WithAlpha(SimplePalette.TextPrimary, 0.9f)),
+                    ImDrawFlags.None, 线宽);
 
                 if (next > 0.05f)
                 {
@@ -315,13 +369,25 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
         if (maxCharges > 1)
         {
             var n = Math.Clamp((int)MathF.Floor(charges + 0.001f), 0, maxCharges);
-            var nText = n.ToString();
-            var nts = ImGui.CalcTextSize(nText);
-            var ntp = max - nts - new Vector2(5f, 3f);
-            drawList.AddRectFilled(ntp - new Vector2(4f, 1f), max - new Vector2(1f),
-                SimplePalette.ToU32(new Vector4(0.1f, 0.1f, 0.1f, 0.85f)), 5f);
-            drawList.AddText(ImGui.GetFont(), ImGui.GetFontSize(), ntp,
-                SimplePalette.ToU32(SimplePalette.TextPrimary), nText);
+            var tex = 取贴图($"Charge{Math.Min(n, 3)}.png");
+            if (tex != null)
+            {
+                // 素材按 45px 基准格子绘制, 随格子缩放
+                var scale = (max.Y - min.Y) / 45f;
+                var size = new Vector2(29f, 26f) * scale;
+                drawList.AddImage(tex.Handle, max - size - new Vector2(2f, 1f) * scale,
+                    max - new Vector2(2f, 1f) * scale);
+            }
+            else
+            {
+                var nText = n.ToString();
+                var nts = ImGui.CalcTextSize(nText);
+                var ntp = max - nts - new Vector2(5f, 3f);
+                drawList.AddRectFilled(ntp - new Vector2(4f, 1f), max - new Vector2(1f),
+                    SimplePalette.ToU32(new Vector4(0.1f, 0.1f, 0.1f, 0.85f)), 5f);
+                drawList.AddText(ImGui.GetFont(), ImGui.GetFontSize(), ntp,
+                    SimplePalette.ToU32(SimplePalette.TextPrimary), nText);
+            }
         }
     }
 
@@ -344,19 +410,51 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
     private static readonly Vector4 角标红 = new(0.92f, 0.30f, 0.32f, 1f);   // 输出
     private static readonly Vector4 角标黄 = new(1.00f, 0.85f, 0.25f, 1f);   // 不限定职业
 
-    // 自定义热键的目标角标：小队成员2-8 → 左上角蓝色数字;
-    // 血量最低的坦克/奶妈/输出/队友 → 正上方 HP LOW（蓝/绿/红/黄, 带黑影保可读）。
+    // 自定义热键的目标角标：小队成员2-8 → 左上角 Num2-8.png 数字贴图;
+    // 血量最低的队友/坦克/奶妈/输出 → 左上角对应职能贴图（062144/062581/062582/062583）。
+    // 贴图缺失退化回文字角标（数字 / HP LOW, 带黑影保可读）。
     private static void DrawTargetBadge(ImDrawListPtr drawList, CustomHotkeyTarget target, Vector2 min, Vector2 max)
     {
         const float fontScale = 0.72f;
         var fontSize = ImGui.GetFontSize() * fontScale;
+        var tileH = max.Y - min.Y;
 
         if (target >= CustomHotkeyTarget.Party2)
         {
-            var num = ((int)target - (int)CustomHotkeyTarget.Party2 + 2).ToString();
-            var pos = min + new Vector2(3f, 1f);
-            drawList.AddText(ImGui.GetFont(), fontSize, pos + new Vector2(1f, 1f), 4278190080u, num);
-            drawList.AddText(ImGui.GetFont(), fontSize, pos, SimplePalette.ToU32(角标蓝), num);
+            var num = (int)target - (int)CustomHotkeyTarget.Party2 + 2;
+            var tex = 取贴图($"Num{num}.png");
+            if (tex != null)
+            {
+                var h = tileH * 0.44f;
+                var w = h * tex.Width / tex.Height;
+                var pos = min + new Vector2(2f, 1f);
+                drawList.AddImage(tex.Handle, pos, pos + new Vector2(w, h));
+                return;
+            }
+
+            var numText = num.ToString();
+            var textPos = min + new Vector2(3f, 1f);
+            drawList.AddText(ImGui.GetFont(), fontSize, textPos + new Vector2(1f, 1f), 4278190080u, numText);
+            drawList.AddText(ImGui.GetFont(), fontSize, textPos, SimplePalette.ToU32(角标蓝), numText);
+            return;
+        }
+
+        var iconFile = target switch
+        {
+            CustomHotkeyTarget.LowestHpParty => "062144_hr1.png",
+            CustomHotkeyTarget.LowestHpTank => "062581_hr1.png",
+            CustomHotkeyTarget.LowestHpHealer => "062582_hr1.png",
+            CustomHotkeyTarget.LowestHpDps => "062583_hr1.png",
+            _ => (string?)null,
+        };
+        if (iconFile == null) return;
+
+        var icon = 取贴图(iconFile);
+        if (icon != null)
+        {
+            var size = tileH * 0.40f;
+            var pos = min + Vector2.One;
+            drawList.AddImage(icon.Handle, pos, pos + new Vector2(size));
             return;
         }
 
@@ -365,11 +463,8 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
             CustomHotkeyTarget.LowestHpTank => 角标蓝,
             CustomHotkeyTarget.LowestHpHealer => 角标绿,
             CustomHotkeyTarget.LowestHpDps => 角标红,
-            CustomHotkeyTarget.LowestHpParty => 角标黄,
-            _ => Vector4.Zero,
+            _ => 角标黄,
         };
-        if (color.W <= 0f) return;
-
         const string text = "HP LOW";
         var ts = ImGui.CalcTextSize(text) * fontScale;
         var tp = new Vector2((min.X + max.X - ts.X) * 0.5f, min.Y + 1f);

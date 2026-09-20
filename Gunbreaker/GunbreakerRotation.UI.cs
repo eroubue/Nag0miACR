@@ -31,6 +31,17 @@ public partial class GunbreakerRotation
         (GunbreakerSkill.石之心, "石之心", ActionType.OffGcd),
     ];
 
+    // 热键「激活中」金框的技能 → buff 映射：buff 未结束时面板盖 activeaction 贴图框。
+    // 亲疏自行只看自己；极光/刚玉之心/石之心是目标型 buff，看自己+任意队友。
+    private static readonly IReadOnlyDictionary<uint, (uint BuffId, bool SelfOnly)> HotkeyActiveBuffsMap =
+        new Dictionary<uint, (uint, bool)>
+        {
+            [GunbreakerSkill.亲疏自行] = (GunbreakerBuff.亲疏自行, true),
+            [GunbreakerSkill.极光] = (GunbreakerBuff.极光, false),
+            [GunbreakerSkill.刚玉之心] = (GunbreakerBuff.刚玉之心, false),
+            [GunbreakerSkill.石之心] = (GunbreakerBuff.石之心, false),
+        };
+
     // 当前生效的循环配置（OnEnterAcr 装载，OnExitAcr 清空）；供事件处理器等无引用访问点读取。
     internal static GunbreakerProfiles? ActiveProfiles { get; private set; }
 
@@ -62,7 +73,8 @@ public partial class GunbreakerRotation
             extraTabs: [("循环设置", DrawJobSettingsTab), ("更新日志", Nag0miUIChangelog.Draw), ("开发用", DrawDev)],
             cycleMode: CycleMode,
             currentModeLabel: CurrentModeLabel,
-            customHotkeySkills: CustomHotkeySkills);
+            customHotkeySkills: CustomHotkeySkills,
+            hotkeyActiveBuffs: HotkeyActiveBuffsMap);
     }
 
     // QT 设置页的技能 id（用于解锁校验）：游戏原始图标无对应动作，返回 0 跳过校验。
