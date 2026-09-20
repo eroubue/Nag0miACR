@@ -1,7 +1,7 @@
 {
   "author": "Nag0mi",
   "version": "1.1",
-  "description": "落魄谷中寒风吹，春秋蝉鸣少年归。",
+  "description": "\u843D\u9B44\u8C37\u4E2D\u5BD2\u98CE\u5439\uFF0C\u6625\u79CB\u8749\u9E23\u5C11\u5E74\u5F52\u3002",
   "supportedJobs": [
     {
       "job": "GNB",
@@ -11,7 +11,7 @@
   "apiVersion": 15,
   "referencePromeVersion": "1.5.10.3",
   "downloadUrl": "https://github.com/eroubue/Nag0miACR/tree/main",
-  "sourceRepositoryUrl": "https://github.com/eroubue/Nag0miACR/",
+  "sourceRepositoryUrl": "https://github.com/eroubue/Nag0miACR",
   "sponsorUrl": "",
-  "sha256": "d11d4d1d26b1c48bfc4df7c96d801dd5d6abe0a8dce388d89d49d08571124bbe"
+  "sha256": "d17a8be6684a8ac2e446e3810415443148198f27e6956007ef7e8ad897697031"
 }
