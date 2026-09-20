@@ -11,18 +11,14 @@ using PromeRotation.Data;
 namespace Nag0mi.Common.UI;
 
 // 四键竖直控制条（自研下沉，职业无关）：状态(播放/暂停/停止) / 模式循环 / 自动攻击 / 设置。
-// 竖向悬浮条 + 背景拖动 + 松手左右吸附（OverlayGeometry.Resolve/Capture），吸附后贴边侧平直、
-// 上下端呈水滴凹弧融边（背景/边框全自绘，吸附状态间 0.15s 渐变形变）；
+// 竖向悬浮条 + 背景拖动 + 松手左右吸附（OverlayGeometry.Resolve/Capture）；窗口逻辑尺寸固定 56×254，
+// 悬浮时可见区为居中胶囊，吸附后贴边侧全高平直、上下端 S 曲线凹弧融入屏边
+// （OverlayBerthShape 自绘轮廓，0.32s 微欠阻尼弹簧形变）；
 // 归一化位置拆成 吸附侧/相对X/相对Y 三个基础字段持久化到 Nag0miUISettings；PreDraw 里 1s 节流压制宿主自带面板。
 internal sealed class Nag0miUIControlWindow : Window
 {
-    // 逻辑尺寸（100% 缩放）：56×198，四键各 36px，纵向间距 46px
-    private static readonly Vector2 LogicalSize = new(56f, 198f);
-
-    // 吸附融边参数：毛细爬升高度 / 汇入端帽弧角度 / 形变时长（毫秒）
-    private const float MeniscusReach = 10f;
-    private const float MeniscusJoinDeg = 35f;
-    private const float MorphMs = 150f;
+    // 逻辑尺寸（100% 缩放）：56×254，四键各 36px，纵向间距 46px；上下各 28 为融边预留（悬浮时透明）
+    private static readonly Vector2 LogicalSize = new(OverlayBerthShape.Width, OverlayBerthShape.DockedHeight);
 
     private static readonly Vector4 BgColor = new(.065f, .075f, .095f, .98f);
     private static readonly Vector4 EdgeColor = new(.26f, .29f, .34f, .7f);
@@ -39,13 +35,11 @@ internal sealed class Nag0miUIControlWindow : Window
     private bool placementDirty;
     private long nextSave;
 
-    // 融边形变动画：morph 0=胶囊 ↔ 1=吸附融边；morphSide 记录动画期间用于镜像的吸附侧
+    // 融边形变动画：弹簧 0=胶囊 ↔ 1=吸附融边；morphSide 记录动画期间用于镜像的吸附侧
     private bool morphInit;
-    private float morph;
-    private float morphFrom;
-    private float morphTarget;
+    private BerthSpring morph;
     private SnapSide morphSide = SnapSide.Right;
-    private long morphStart;
+    private long morphTick;
 
     public Vector2 PixelPosition { get; private set; }
     public Vector2 PixelSize { get; private set; }
@@ -137,10 +131,11 @@ internal sealed class Nag0miUIControlWindow : Window
                 SavePlacement();
             }
         }
-        PixelPosition = OverlayGeometry.Resolve(Placement, viewport.Pos, viewport.Size, PixelSize);
+        var placement = Placement;
+        PixelPosition = OverlayGeometry.Resolve(placement, viewport.Pos, viewport.Size, PixelSize);
         // ForceMainWindow makes WindowSystem add MainViewport.Pos to Window.Position.
         Position = PixelPosition - viewport.Pos;
-        UpdateMorph(Placement.Side);
+        UpdateMorph(placement.Side);
 
         // 背景与边框全自绘（Draw 里按吸附形态画轮廓）：原生背景/边框隐藏，圆角归零
         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
@@ -171,7 +166,7 @@ internal sealed class Nag0miUIControlWindow : Window
         var stateText = disabled ? "已关闭 · 左键开启" : paused ? "已暂停 · 左键继续" : "运行中 · 左键暂停";
 
         // 1. 状态键
-        var stateClick = IconButton("State", icon, 12, color);
+        var stateClick = IconButton("State", icon, OverlayBerthShape.ButtonRows[0], color);
         var stateRightClick = ImGui.IsItemClicked(ImGuiMouseButton.Right);
         var buttonHovered = ImGui.IsItemHovered();
         if (stateRightClick || stateClick)
@@ -187,7 +182,7 @@ internal sealed class Nag0miUIControlWindow : Window
         Tooltip($"{stateText}\n右键关闭 ACR");
 
         // 2. 模式循环键（job 注入；未注入时不响应点击）
-        ImGui.SetCursorPos(new Vector2(10, 58) * scale);
+        ImGui.SetCursorPos(new Vector2(10, OverlayBerthShape.ButtonRows[1]) * scale);
         var modeLabel = Nag0miUIJobEnv.CurrentModeLabel?.Invoke() ?? "模";
         if (Button(modeLabel + "###Mode", SimplePalette.ModeButtonColor(模式显示名())))
             Nag0miUIJobEnv.CycleMode?.Invoke();
@@ -196,24 +191,29 @@ internal sealed class Nag0miUIControlWindow : Window
 
         // 3. 自动攻击键（开=彩色高亮 / 关=暗化）
         var autoPull = host.AutoPull;
-        if (IconButton("AutoPull", FontAwesomeIcon.Crosshairs, 104,
+        if (IconButton("AutoPull", FontAwesomeIcon.Crosshairs, OverlayBerthShape.ButtonRows[2],
                 autoPull ? SimplePalette.StateRunning : SimplePalette.TextDisabled))
             host.AutoPull = !autoPull;
         buttonHovered |= ImGui.IsItemHovered();
         Tooltip($"自动攻击：{(autoPull ? "已开启" : "已关闭")}\n左键切换");
 
         // 4. 设置键（贴条展开设置窗口）
-        if (IconButton("Settings", FontAwesomeIcon.Cog, 150, new Vector4(.79f, .81f, .85f, 1)))
+        if (IconButton("Settings", FontAwesomeIcon.Cog, OverlayBerthShape.ButtonRows[3], new Vector4(.79f, .81f, .85f, 1)))
             Nag0miUIFramework.ToggleSettings();
         buttonHovered |= ImGui.IsItemHovered();
         Tooltip("打开／关闭完整设置");
 
-        // 背景（非按钮处）按住左键拖动整个条
+        // 背景（非按钮处）按住左键拖动整个条（上下融边预留的透明区不触发）
         if (ImGui.IsWindowHovered() && !buttonHovered && ImGui.IsMouseClicked(ImGuiMouseButton.Left))
         {
-            dragging = true;
-            dragMouse = ImGui.GetMousePos();
-            dragPosition = PixelPosition;
+            var pad = OverlayBerthShape.VisiblePad(morph.Value) * scale;
+            var localY = ImGui.GetMousePos().Y - PixelPosition.Y;
+            if (localY >= pad && localY <= PixelSize.Y - pad)
+            {
+                dragging = true;
+                dragMouse = ImGui.GetMousePos();
+                dragPosition = PixelPosition;
+            }
         }
     }
 
@@ -224,39 +224,28 @@ internal sealed class Nag0miUIControlWindow : Window
         return s.ModeIndex >= 0 && s.ModeIndex < names.Length ? names[s.ModeIndex] : $"模式{s.ModeIndex}";
     }
 
-    // 形变动画推进：吸附状态变化时以当前 morph 为起点，150ms smoothstep 渐变
+    // 形变动画推进：吸附状态作为弹簧目标（0.32s 微欠阻尼）；首帧直接落位，不播入场形变
     private void UpdateMorph(SnapSide side)
     {
+        var now = Environment.TickCount64;
         var target = side == SnapSide.None ? 0f : 1f;
         if (side != SnapSide.None) morphSide = side;
         if (!morphInit)
         {
-            // 首帧直接对齐目标形态，避免进游戏时播一次多余形变
             morphInit = true;
-            morph = morphFrom = morphTarget = target;
-            morphStart = Environment.TickCount64;
-            return;
+            morph = new BerthSpring(target);
         }
-        if (target != morphTarget)
+        else
         {
-            morphFrom = CurrentMorph();
-            morphTarget = target;
-            morphStart = Environment.TickCount64;
+            morph.Step(target, (now - morphTick) / 1000f);
         }
-        morph = CurrentMorph();
+        morphTick = now;
     }
 
-    private float CurrentMorph()
-    {
-        var p = Math.Clamp((Environment.TickCount64 - morphStart) / MorphMs, 0f, 1f);
-        var s = p * p * (3f - 2f * p);
-        return morphFrom + (morphTarget - morphFrom) * s;
-    }
-
-    // 自绘背景：轮廓起点取贴边中点（形状对其星形可见），扇形填充 + 同点列描边
+    // 自绘背景：轮廓对贴边中点星形可见（OverlayBerthShape 保证），PathFillConvex 扇形填充 + 同点列描边
     private void DrawBackground()
     {
-        var pts = BuildOutline(morphSide == SnapSide.Right, Math.Clamp(morph, 0f, 1f));
+        var pts = OverlayBerthShape.BuildOutline(morph.Value, morphSide == SnapSide.Right, scale, PixelPosition);
         var draw = ImGui.GetWindowDrawList();
         draw.PathClear();
         foreach (var p in pts) draw.PathLineTo(p);
@@ -264,89 +253,6 @@ internal sealed class Nag0miUIControlWindow : Window
         var span = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(pts);
         draw.AddPolyline(ref span[0], span.Length, ImGui.GetColorU32(EdgeColor), ImDrawFlags.Closed,
             MathF.Max(1f, scale));
-    }
-
-    // 轮廓生成（贴边侧按左侧构造，mirror 时 x 镜像；t 0=胶囊 ↔ 1=水滴凹弧融边）：
-    // 贴边侧平直接触并向端帽方向爬升 q，凹弧贝塞尔（竖直切线入、端帽弧切线出）汇入端帽弧，外侧保持半圆端。
-    private List<Vector2> BuildOutline(bool mirror, float t)
-    {
-        var w = PixelSize.X;
-        var h = PixelSize.Y;
-        var r = w * .5f;
-        var q = MeniscusReach * scale * t;
-        var join = float.DegreesToRadians(MeniscusJoinDeg) * t;
-        var pts = new List<Vector2>(64);
-
-        float X(float x) => mirror ? w - x : x;
-        void Add(float x, float y) => pts.Add(PixelPosition + new Vector2(X(x), y));
-
-        var ky = r - q;                             // 上接触点 K
-        var jx = r - r * MathF.Cos(join);           // 汇入点 J（端帽弧 join 角处）
-        var jy = r - r * MathF.Sin(join);
-        var chord = MathF.Sqrt(jx * jx + (ky - jy) * (ky - jy));
-        var handle = .55f * chord;
-
-        // 贴边中点 → 沿边上行至 K → 凹弧贝塞尔 K→J
-        Add(0, h * .5f);
-        Add(0, ky);
-        if (chord > .01f)
-        {
-            var k = new Vector2(0, ky);
-            var j = new Vector2(jx, jy);
-            var c1 = new Vector2(0, ky - handle);
-            var c2 = new Vector2(jx - MathF.Sin(join) * handle, jy + MathF.Cos(join) * handle);
-            for (var i = 1; i <= 8; i++) { var p = Cubic(k, c1, c2, j, i / 8f); Add(p.X, p.Y); }
-        }
-        else Add(jx, jy);
-
-        // 上端帽弧（join → 90°）→ 顶边
-        for (var i = 1; i <= 8; i++)
-        {
-            var a = join + (MathF.PI / 2f - join) * (i / 8f);
-            Add(r - r * MathF.Cos(a), r - r * MathF.Sin(a));
-        }
-        Add(w - r, 0);
-
-        // 右上弧 → 右边
-        for (var i = 1; i <= 8; i++)
-        {
-            var b = MathF.PI / 2f * (i / 8f);
-            Add(w - r + r * MathF.Sin(b), r - r * MathF.Cos(b));
-        }
-        Add(w, h - r);
-
-        // 右下弧 → 底边
-        for (var i = 1; i <= 8; i++)
-        {
-            var b = MathF.PI / 2f * (i / 8f);
-            Add(w - r + r * MathF.Cos(b), h - r + r * MathF.Sin(b));
-        }
-        Add(r, h);
-
-        // 下端帽弧（90° → join）→ 凹弧贝塞尔 J→K（竖直切线入边，与上半镜像）
-        for (var i = 1; i <= 8; i++)
-        {
-            var a = MathF.PI / 2f - (MathF.PI / 2f - join) * (i / 8f);
-            Add(r - r * MathF.Cos(a), h - r + r * MathF.Sin(a));
-        }
-        var kby = h - r + q;
-        if (chord > .01f)
-        {
-            var j = new Vector2(jx, h - r + r * MathF.Sin(join));
-            var k = new Vector2(0, kby);
-            var c1 = j + new Vector2(-MathF.Sin(join), -MathF.Cos(join)) * handle;
-            var c2 = new Vector2(0, kby + handle);
-            for (var i = 1; i <= 8; i++) { var p = Cubic(j, c1, c2, k, i / 8f); Add(p.X, p.Y); }
-        }
-        else Add(0, kby);
-
-        return pts;
-    }
-
-    private static Vector2 Cubic(Vector2 p0, Vector2 c1, Vector2 c2, Vector2 p3, float u)
-    {
-        var v = 1f - u;
-        return v * v * v * p0 + 3f * v * v * u * c1 + 3f * v * u * u * c2 + u * u * u * p3;
     }
 
     private bool IconButton(string id, FontAwesomeIcon icon, float y, Vector4 color)

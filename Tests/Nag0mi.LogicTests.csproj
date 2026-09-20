@@ -11,6 +11,7 @@
     <Compile Include="../Common/Data/OrderMergeHelper.cs" />
     <Compile Include="../Common/Data/CustomHotkeyTarget.cs" />
     <Compile Include="../Common/UI/SwapOrderHelper.cs" />
+    <Compile Include="../Common/UI/OverlayBerthShape.cs" />
     <Compile Include="../Common/UI/SimplePalette.cs" />
     <Compile Include="../Gunbreaker/Control/*.cs" />
     <Compile Include="../Gunbreaker/Data/GunbreakerAoe.cs" />
