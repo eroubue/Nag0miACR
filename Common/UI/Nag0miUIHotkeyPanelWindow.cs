@@ -20,7 +20,7 @@ namespace Nag0mi.Common.UI;
 // 每帧按网格精确尺寸），图标/冷却/充能/队列待发用宿主公开件渲染
 // （IHotkey/ActionHotkey/DelegateHotkey + IconHelper/ActionHelper/HotkeyQueueManager）;
 // 冷却/充能进度为圆圈进度条 + 居中秒数, 充能数/目标角标/激活金框用 UI\ 贴图
-// （Charge0-3 / Num2-8 / 062xxx / activeaction, 随构建复制到程序集旁, 缺失退化文字）。
+// （Charge0-3 / Num2-8 / 062xxx / activeaction, 位于宿主配置目录\ACR\作者\UI\, 缺失退化文字）。
 // 右键按住实时交换排序（SwapOrderHelper）, 松手写回 Nag0miUISettings.HotkeyOrder 并落盘;
 // 左键按住窗口内任意位置（格子或缝隙）拖动整个面板——格子上的点击与拖动按位移阈值区分,
 // 超阈值转拖动后松手不触发热键, 位置落盘。
@@ -302,23 +302,64 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
         return false;
     }
 
-    // 面板贴图（程序集旁 UI\ 子目录, 随构建复制）: 惰性加载并缓存, 失败缓存 null 不再重试。
+    // 面板贴图目录：ACR 程序集由宿主按字节流加载（Assembly.Location 为空）,
+    // 目录约定为 宿主配置目录\ACR\作者\UI\（与安装包布局一致, csproj 输出目录同构）;
+    // Assembly.Location 非空时兜底（开发直跑）。只缓存命中, 未找到时下帧重试。
+    private static string? 贴图目录;
+    private static bool 贴图目录警告过;
+
+    private static string? 取贴图目录()
+    {
+        if (贴图目录 != null) return 贴图目录;
+        var candidates = new List<string?>(2)
+        {
+            Svc.PluginInterface.ConfigDirectory?.FullName is { } cfg
+                ? Path.Combine(cfg, "ACR", Nag0miUIJobEnv.作者, "UI")
+                : null,
+            Path.GetDirectoryName(typeof(Nag0miUIHotkeyPanelWindow).Assembly.Location) is { Length: > 0 } asm
+                ? Path.Combine(asm, "UI")
+                : null,
+        };
+        foreach (var dir in candidates)
+            if (dir != null && Directory.Exists(dir)) { 贴图目录 = dir; return dir; }
+        if (!贴图目录警告过)
+        {
+            贴图目录警告过 = true;
+            Svc.Log.Warning($"[{Nag0miUIJobEnv.作者}] 热键面板贴图目录未找到（尝试过: {string.Join(" | ", candidates)}）");
+        }
+        return null;
+    }
+
+    // 贴图惰性加载：只缓存成功结果——纹理异步就绪前 GetWrapOrDefault 返回 null,
+    // 缓存 null 会把「加载中」误判成「加载失败」; 异常视为真失败, 缓存 null 且只警告一次。
     private static readonly Dictionary<string, IDalamudTextureWrap?> 贴图缓存 = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly HashSet<string> 贴图警告过 = new(StringComparer.OrdinalIgnoreCase);
 
     private static IDalamudTextureWrap? 取贴图(string fileName)
     {
         if (贴图缓存.TryGetValue(fileName, out var cached)) return cached;
-        IDalamudTextureWrap? wrap = null;
+        var dir = 取贴图目录();
+        if (dir == null) return null;
+        var path = Path.Combine(dir, fileName);
+        if (!File.Exists(path))
+        {
+            if (贴图警告过.Add(fileName))
+                Svc.Log.Warning($"[{Nag0miUIJobEnv.作者}] 贴图缺失: {path}");
+            return null;
+        }
         try
         {
-            var dir = Path.GetDirectoryName(typeof(Nag0miUIHotkeyPanelWindow).Assembly.Location);
-            var path = dir == null ? null : Path.Combine(dir, "UI", fileName);
-            if (path != null && File.Exists(path))
-                wrap = Svc.Texture.GetFromFile(path)?.GetWrapOrDefault(null);
+            var wrap = Svc.Texture.GetFromFile(path).GetWrapOrDefault(null);
+            if (wrap != null) 贴图缓存[fileName] = wrap;
+            return wrap;
         }
-        catch (Exception e) { Svc.Log.Warning($"[{Nag0miUIJobEnv.作者}] 贴图加载失败 {fileName}: {e.Message}"); }
-        贴图缓存[fileName] = wrap;
-        return wrap;
+        catch (Exception e)
+        {
+            贴图缓存[fileName] = null;
+            if (贴图警告过.Add(fileName))
+                Svc.Log.Warning($"[{Nag0miUIJobEnv.作者}] 贴图加载失败 {fileName}: {e.Message}");
+            return null;
+        }
     }
 
     // 冷却/充能进度：圆圈进度条（顶部起顺时针, 弧长 = 剩余比例, 随时间消减）+ 居中秒数。
