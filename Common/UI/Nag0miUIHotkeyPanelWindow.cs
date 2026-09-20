@@ -10,6 +10,7 @@ using PromeRotation.Extensions;
 using PromeRotation.Helpers;
 using PromeRotation.Managers;
 using PromeRotation.UI.HotKey;
+using FcsActionManager = FFXIVClientStructs.FFXIV.Client.Game.ActionManager;
 
 namespace Nag0mi.Common.UI;
 
@@ -281,7 +282,7 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
     {
         var cd = ActionHelper.GetActionCooldown(hk.ActionId);
         var charges = ActionHelper.GetActionCharges(hk.ActionId);
-        var maxCharges = Math.Max(1, ActionHelper.GetMaxCharges(hk.ActionId));
+        var maxCharges = 取最大充能(hk.ActionId);
 
         if (cd > 0f && ActionHelper.IsActionRecharging(cd, charges, maxCharges))
         {
@@ -322,6 +323,19 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
             drawList.AddText(ImGui.GetFont(), ImGui.GetFontSize(), ntp,
                 SimplePalette.ToU32(SimplePalette.TextPrimary), nText);
         }
+    }
+
+    // 最大充能数：技能表 MaxCharges 列对特性给层数的技能（如极光88级特性）是 0,
+    // 必须走游戏本体函数（按当前等级含特性）; 读取失败退回表值, 保底 1。
+    private static unsafe int 取最大充能(uint actionId)
+    {
+        try
+        {
+            var n = FcsActionManager.GetMaxCharges(actionId, 0u);
+            if (n > 0) return n;
+        }
+        catch { /* 宿主未就绪 */ }
+        return Math.Max(1, ActionHelper.GetMaxCharges(actionId));
     }
 
     // 目标角标配色（自定义热键）

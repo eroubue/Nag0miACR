@@ -1,9 +1,10 @@
-﻿<Project Sdk="Dalamud.CN.Net.Sdk/15.0.0">
+<Project Sdk="Dalamud.CN.Net.Sdk/15.0.0">
 
     <PropertyGroup>
         <TargetFramework>net10.0-windows</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
 
         <!-- 指定输出目录 -->
