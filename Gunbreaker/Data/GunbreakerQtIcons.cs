@@ -14,11 +14,11 @@ internal static class GunbreakerQtIcons
 
     public static IReadOnlyDictionary<string, QtIcon> Map { get; } = new Dictionary<string, QtIcon>
     {
-        ["爆发"] = new(GunbreakerSkill.无情, Marker: "爆"),
-        ["倾泻爆发"] = new(GunbreakerSkill.爆发击, Marker: "倾"),
+        ["爆发"] = new(GunbreakerSkill.无情, Marker: "爆发"),
+        ["倾泻爆发"] = new(GunbreakerSkill.爆发击, Marker: "倾泻"),
         ["AOE"] = new(GunbreakerSkill.恶魔杀),
         ["无情"] = new(GunbreakerSkill.无情),
-        [GunbreakerQT.无情不延后] = new(GunbreakerSkill.无情, Marker: "延"),
+        [GunbreakerQT.无情不延后] = new(GunbreakerSkill.无情, Marker: "不延"),
         ["子弹连"] = new(GunbreakerSkill.烈牙),
         ["领域"] = new(GunbreakerSkill.爆破领域),
         ["音速破"] = new(GunbreakerSkill.音速破),
