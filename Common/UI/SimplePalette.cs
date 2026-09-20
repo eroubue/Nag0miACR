@@ -21,6 +21,9 @@ public static class SimplePalette
     // 日随模式文字（亮绿）
     public static readonly Vector4 ModeDailyText = new(0.20f, 1f, 0.40f, 1f);
 
+    // 自定义模式黄（控制条模式键）
+    public static readonly Vector4 ModeCustom = new(0.98f, 0.84f, 0.28f, 1f);
+
     // 文字
     public static readonly Vector4 TextPrimary = new(0.95f, 0.95f, 0.95f, 1f);
     public static readonly Vector4 TextSecondary = new(0.70f, 0.70f, 0.70f, 1f);
@@ -51,6 +54,16 @@ public static class SimplePalette
     public static readonly Vector4 QtOnGlow = new(0.30f, 0.85f, 0.45f, 0.90f);       // 启用：底部微光条
     public static readonly Vector4 QtOffBorder = new(0.92f, 0.30f, 0.32f, 1f);       // 关闭：红色描边
     public static readonly Vector4 QtOffVeil = new(0.08f, 0.08f, 0.10f, 0.38f);      // 关闭：深灰罩层（半透明）
+
+    // 控制条「模式」键取色：按模式名关键词映射（高难=红 / 日随=绿 / 自定义=黄），未识别回落主色。
+    public static Vector4 ModeButtonColor(string? modeName)
+    {
+        if (modeName == null) return PrimaryHover;
+        if (modeName.Contains("高难")) return StateOff;
+        if (modeName.Contains("日随")) return StateRunning;
+        if (modeName.Contains("自定义")) return ModeCustom;
+        return PrimaryHover;
+    }
 
     public static uint ToU32(Vector4 c)
     {

@@ -16,6 +16,7 @@ internal static class Program
             OrderMergeTests.Run();
             CustomHotkeyTargetTests.Run();
             QtIconTests.Run();
+            ModeButtonColorTests.Run();
             Console.WriteLine($"PASS: {Check.Assertions} assertions");
             return 0;
         }
