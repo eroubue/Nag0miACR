@@ -1,6 +1,7 @@
 PromeRotation_ACR_Development.md
 *.md
 !/AGENTS.md
+!/CHANGELOG.md
 *.log
 *.json
 *.info
