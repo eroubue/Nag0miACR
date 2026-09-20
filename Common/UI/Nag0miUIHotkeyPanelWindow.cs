@@ -330,36 +330,41 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
         return null;
     }
 
-    // 贴图惰性加载：只缓存成功结果——纹理异步就绪前 GetWrapOrDefault 返回 null,
-    // 缓存 null 会把「加载中」误判成「加载失败」; 异常视为真失败, 缓存 null 且只警告一次。
-    private static readonly Dictionary<string, IDalamudTextureWrap?> 贴图缓存 = new(StringComparer.OrdinalIgnoreCase);
+    // 贴图缓存持有 ISharedImmediateTexture 共享句柄（保活底层纹理）, 绘制帧才取 wrap。
+    // 直接缓存 wrap 不行：句柄被 GC 回收后底层纹理销毁, 缓存的 wrap 变成已销毁对象,
+    // 再访问 Handle 抛 ObjectDisposedException; 异步就绪前 GetWrapOrDefault 返回 null, 下帧重试。
+    private static readonly Dictionary<string, ISharedImmediateTexture> 贴图缓存 = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly HashSet<string> 贴图失败 = new(StringComparer.OrdinalIgnoreCase);
     private static readonly HashSet<string> 贴图警告过 = new(StringComparer.OrdinalIgnoreCase);
 
     private static IDalamudTextureWrap? 取贴图(string fileName)
     {
-        if (贴图缓存.TryGetValue(fileName, out var cached)) return cached;
-        var dir = 取贴图目录();
-        if (dir == null) return null;
-        var path = Path.Combine(dir, fileName);
-        if (!File.Exists(path))
+        if (贴图失败.Contains(fileName)) return null;
+        if (!贴图缓存.TryGetValue(fileName, out var tex))
         {
-            if (贴图警告过.Add(fileName))
-                Svc.Log.Warning($"[{Nag0miUIJobEnv.作者}] 贴图缺失: {path}");
-            return null;
+            var dir = 取贴图目录();
+            if (dir == null) return null;
+            var path = Path.Combine(dir, fileName);
+            if (!File.Exists(path))
+            {
+                if (贴图警告过.Add(fileName))
+                    Svc.Log.Warning($"[{Nag0miUIJobEnv.作者}] 贴图缺失: {path}");
+                return null;
+            }
+            try
+            {
+                tex = Svc.Texture.GetFromFile(path);
+            }
+            catch (Exception e)
+            {
+                贴图失败.Add(fileName);
+                if (贴图警告过.Add(fileName))
+                    Svc.Log.Warning($"[{Nag0miUIJobEnv.作者}] 贴图加载失败 {fileName}: {e.Message}");
+                return null;
+            }
+            贴图缓存[fileName] = tex;
         }
-        try
-        {
-            var wrap = Svc.Texture.GetFromFile(path).GetWrapOrDefault(null);
-            if (wrap != null) 贴图缓存[fileName] = wrap;
-            return wrap;
-        }
-        catch (Exception e)
-        {
-            贴图缓存[fileName] = null;
-            if (贴图警告过.Add(fileName))
-                Svc.Log.Warning($"[{Nag0miUIJobEnv.作者}] 贴图加载失败 {fileName}: {e.Message}");
-            return null;
-        }
+        return tex.GetWrapOrDefault(null);
     }
 
     // 冷却/充能进度：圆圈进度条（顶部起顺时针, 弧长 = 剩余比例, 随时间消减）+ 居中秒数。
