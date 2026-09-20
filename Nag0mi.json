@@ -11,7 +11,7 @@
   "apiVersion": 15,
   "referencePromeVersion": "1.5.10.3",
   "downloadUrl": "https://github.com/eroubue/Nag0miACR/tree/main",
-  "sourceRepositoryUrl": "https://github.com/eroubue/Nag0miACR",
+  "sourceRepositoryUrl": "https://github.com/eroubue/Nag0miACR/",
   "sponsorUrl": "",
-  "sha256": "d17a8be6684a8ac2e446e3810415443148198f27e6956007ef7e8ad897697031"
+  "sha256": "41c59fbf92e2b395eb365d20a4c811246fefeec03e86f461240bd16428dcbfd4"
 }
