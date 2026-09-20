@@ -418,11 +418,10 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
             var tex = 取贴图($"Charge{Math.Min(n, 3)}.png");
             if (tex != null)
             {
-                // 素材按 45px 基准格子绘制, 随格子缩放
-                var scale = (max.Y - min.Y) / 45f;
-                var size = new Vector2(29f, 26f) * scale;
-                drawList.AddImage(tex.Handle, max - size - new Vector2(2f, 1f) * scale,
-                    max - new Vector2(2f, 1f) * scale);
+                // 充能角标占格子 1/16 面积（边长 1/4）, 贴右下角
+                var size = (max - min) * 0.25f;
+                drawList.AddImage(tex.Handle, max - size - new Vector2(2f, 1f),
+                    max - new Vector2(2f, 1f));
             }
             else
             {
@@ -456,6 +455,10 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
     private static readonly Vector4 角标红 = new(0.92f, 0.30f, 0.32f, 1f);   // 输出
     private static readonly Vector4 角标黄 = new(1.00f, 0.85f, 0.25f, 1f);   // 不限定职业
 
+    // 数字/职能角标贴图：左上角, 边长 ≈ 格子边长的 1/√3（面积约 1/3）, 70% 不透明度
+    private const float 角标边长比 = 0.577f;
+    private const uint 角标着色 = 0xB3FFFFFFu; // ImGui 0xAABBGGRR, alpha 0xB3 ≈ 70%, 白色不染色
+
     // 自定义热键的目标角标：小队成员2-8 → 左上角 Num2-8.png 数字贴图;
     // 血量最低的队友/坦克/奶妈/输出 → 左上角对应职能贴图（062144/062581/062582/062583）。
     // 贴图缺失退化回文字角标（数字 / HP LOW, 带黑影保可读）。
@@ -471,10 +474,11 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
             var tex = 取贴图($"Num{num}.png");
             if (tex != null)
             {
-                var h = tileH * 0.44f;
+                var h = tileH * 角标边长比;
                 var w = h * tex.Width / tex.Height;
                 var pos = min + new Vector2(2f, 1f);
-                drawList.AddImage(tex.Handle, pos, pos + new Vector2(w, h));
+                drawList.AddImage(tex.Handle, pos, pos + new Vector2(w, h),
+                    Vector2.Zero, Vector2.One, 角标着色);
                 return;
             }
 
@@ -498,9 +502,10 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
         var icon = 取贴图(iconFile);
         if (icon != null)
         {
-            var size = tileH * 0.40f;
+            var size = tileH * 角标边长比;
             var pos = min + Vector2.One;
-            drawList.AddImage(icon.Handle, pos, pos + new Vector2(size));
+            drawList.AddImage(icon.Handle, pos, pos + new Vector2(size),
+                Vector2.Zero, Vector2.One, 角标着色);
             return;
         }
 
