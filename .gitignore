@@ -1,5 +1,6 @@
 PromeRotation_ACR_Development.md
 *.md
+!/AGENTS.md
 *.log
 *.json
 *.info
@@ -12,3 +13,11 @@ PromeRotation_ACR_Development.md
 /obj
 /.idea
 /docs
+/artifacts/
+/Tests/bin/
+/Tests/obj/
+!/docs/
+/docs/*
+!/docs/verification/
+!/docs/verification/gunbreaker-overlay.md
+!/docs/verification/common-ui.md
