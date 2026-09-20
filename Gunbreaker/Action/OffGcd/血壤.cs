@@ -1,5 +1,7 @@
 using Nag0mi.Gunbreaker.Data;
+using PromeRotation.Core;
 using PromeRotation.Data;
+using PromeRotation.Extensions;
 using PromeRotation.Helpers;
 using PromeRotation.Resolvers;
 
@@ -12,10 +14,6 @@ public class 血壤 : IDecisionResolver
     {
      
         if (ActionHelper.GetGcdRemain() <= 0.3) return new CheckResult(false, "GCD剩余不足");
-        if (QT.QTGET(GunbreakerQT.停手))
-        {
-            return new CheckResult(false, "停止");
-        }
         if (!GunbreakerHelper.IsReady(GunbreakerSkill.血壤))
         {
             return new CheckResult(false, "血壤未冷却");
@@ -27,6 +25,16 @@ public class 血壤 : IDecisionResolver
         if (!QT.QTGET(GunbreakerQT.血壤))
         {
             return new CheckResult(false, "血壤QT未开启");
+        }
+
+        var maxAmmo = Core.Me != null && Core.Me.Level >= 88 ? 3 : 2;
+        if (JobGaugeHelper.GNB.Ammo >= maxAmmo)
+        {
+            return new CheckResult(false, "晶壤已满");
+        }
+        if (Core.Me != null && Core.Me.HasStatus(GunbreakerBuff.心有灵狮))
+        {
+            return new CheckResult(false, "已有狮心预备");
         }
 
 

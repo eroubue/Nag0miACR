@@ -38,10 +38,13 @@ public static class GunbreakerSkill
     public const uint 星云 = 16148;
     public const uint 铁壁 = 7531;
     public const uint 大星云 = 36935;
-
     public const uint 光之心 = 16160;
 
-   
+    public const uint 挑衅 = 7533;
+    public const uint 退避 = 7537;
+    public const uint 亲疏自行 = 7548;
+    public const uint 雪仇 = 7535;
+
     public const uint 盾姿 = 16142;
     public const uint 关盾姿 = 32068;
 }

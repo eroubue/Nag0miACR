@@ -1,19 +1,20 @@
-﻿using System.Numerics;
-using Dalamud.Bindings.ImGui;
 using ECommons.ExcelServices;
 using ECommons.Logging;
+using Nag0mi.Common.Data;
+using Nag0mi.Common.UI;
 using Nag0mi.Gunbreaker.Action.Always;
 using Nag0mi.Gunbreaker.Action.Gcd;
 using Nag0mi.Gunbreaker.Action.OffGcd;
 using Nag0mi.Gunbreaker.Data;
 using Nag0mi.Gunbreaker.Opener;
+using Nag0mi.Gunbreaker.Timeline;
 using PromeRotation.Core;
 using PromeRotation.Data;
-using PromeRotation.Helpers;
 using PromeRotation.Managers;
 using PromeRotation.Resolvers;
 using PromeRotation.Rotation;
 using PromeRotation.Timeline;
+using PromeRotation.Timeline.Core;
 
 namespace Nag0mi.Gunbreaker;
 
@@ -21,10 +22,36 @@ namespace Nag0mi.Gunbreaker;
 
 [RotationMetadata((uint)Job.GNB, "绝枪战士", "Nag0mi", "1.0",
     ContentScope = AcrContentScope.HighEnd)]
-public class GunbreakerRotation : IRotation
+public partial class GunbreakerRotation : IRotation, IRotationLifecycle, IDisposable
 {
-   
-    
+    public void OnEnterAcr()
+    {
+        LoadProfiles();
+        if (_profiles != null)
+        {
+            _profiles.Apply(GunbreakerSettings.Instance);
+            MigrateLegacyUi();
+            // 框架按模式索引记忆 QT 显隐/默认值：与循环配置的当前模式对齐
+            var ui = Nag0miUISettings.Instance;
+            var modeIndex = (int)_profiles.Config.CurrentMode;
+            if (ui.ModeIndex != modeIndex) ui.SwitchMode(modeIndex);
+            else ui.RestoreQtSnapshot(modeIndex);
+        }
+        Nag0miUIFramework.Install();
+        ActiveProfiles = _profiles;
+    }
+
+    public void OnExitAcr()
+    {
+        ActiveProfiles = null;
+        SyncProfiles();
+        Nag0miUIFramework.Uninstall();
+        _profiles = null;
+        _store = null;
+    }
+
+    public void Dispose() => OnExitAcr();
+
     // 创建一个属于该职业的回调
     private readonly IRotationEventHandler _eventHandler = new GunbreakerRotationEventHandler();
     public IRotationEventHandler GetEventHandler() => _eventHandler;
@@ -36,49 +63,26 @@ public class GunbreakerRotation : IRotation
     
     // 实现对外暴露的静态属性
     // Qt列表
-    public static IReadOnlyDictionary<string, bool> QtList { get; } = new Dictionary<string, bool>
-    {
-        ["停手"] = false,
-        ["爆发"] = true,
-        ["倾泻爆发"] = false,
-        ["AOE"] = true,
-        ["无情"] = true,
-        ["无情不延后"] = true,
-        ["子弹连"] = true,
-        ["领域"] = true,
-        ["音速破"] = true,
-        ["优先音速破"] = false,
-        ["弓形"] = true,
-        ["突进起手"] = true,
-        ["血壤"] = true,
-        ["爆发击"] = true,
-        ["dot"] = true,
-        ["狮心连"] = true,
-        ["倍攻"] = true,
-        ["闪雷弹"] = true,
-        ["命运之环"] = true,
-        ["仅使用爆发击卸除子弹"] = false,
-        ["小于3目标时不用弓形"] = false,
-        ["弓形冲波允许错开无情"] = false,
-        ["落地无情"] = false,
-        ["血壤不延后"] = false,
-        ["爆发药"] = true,
-        ["优先狮心连"] = false,
-        ["自动拉怪"] = true,
-        ["自动减伤"] = true,
-        ["强制盾姿"] = true,
-        ["启用起手"] = true
-        
-    };
-    // 起手列表
+    public static IReadOnlyDictionary<string, bool> QtList => GunbreakerQtDefaults.All;
+
     public static IReadOnlyDictionary<string, Type> Openers { get; } = new Dictionary<string, Type>
     {
         ["妖星起手"] = typeof(妖星),
-        ["无情2g起手"] = typeof(无情2g)
+        ["无情2g起手"] = typeof(无情2g),
+        ["绝欧起手"] = typeof(绝欧),
+        ["龙诗起手"] = typeof(龙诗),
+        ["绝亚起手"] = typeof(绝亚),
+        ["神兵起手"] = typeof(神兵),
+        ["巴哈起手"] = typeof(巴哈)
     };
+
+    // 时间轴职业专属条件 / 行为节点
+    public static IJobNodeProvider NodeProvider { get; } = new GunbreakerJobNodeProvider();
     
     public GunbreakerRotation()
     {
+        // 向 Nag0miUI 框架注入本职业全部环境（QT 表、热键、模式、图标解析、设置页注入）
+        ConfigureUi();
         // 按照优先级从高到低的顺序，注册所有的求解器
         // _offGcdResolvers.Add(new SimpleOffGcd());
         _alwaysResolvers.Add(new 落地无情());
@@ -99,31 +103,13 @@ public class GunbreakerRotation : IRotation
         _offGcdResolvers.Add(new 血壤());
         _offGcdResolvers.Add(new 领域());
         _offGcdResolvers.Add(new 弓形冲波());
-        // 画QT
-        foreach (var kvp in QtList)
-            PromeSettings.Instance.AddQt(kvp.Key, kvp.Value);
-        // ── HotkeyPanel 示例 ──
-        // 1. 创建面板 → 2. AddHotkey → 3. 注册到 HotkeyManager
-        // var panel = new HotkeyPanel(columns: 3, buttonSize: 50f, spacing: 6f, title: "WAR - 技能");
-        // panel.AddHotkey("重斩", new PAction(31, ActionType.Gcd, ActionTargetType.Target));
-        // panel.AddHotkey("狂暴", new PAction(38, ActionType.OffGcd, ActionTargetType.Self));
-        // HotkeyManager.Instance.AddHotkeyPanel(panel);
-        //
-        // var utilPanel = new HotkeyPanel(columns: 2, title: "WAR - 功能");
-        // utilPanel.AddHotkey("疾跑", new PAction(3, ActionType.OffGcd, ActionTargetType.Self));
-        // utilPanel.AddHotkey("开关", new ToggleLogic(
-        //     () => PromeSettings.Instance.GetQt("自动减伤"),
-        //     () => PromeSettings.Instance.SetQt("自动减伤",
-        //         !PromeSettings.Instance.GetQt("自动减伤"))),
-        //     iconActionId: 44);
-        // HotkeyManager.Instance.AddHotkeyPanel(utilPanel);
-        
+        // QT 注册与热键面板由框架在 OnEnterAcr → Nag0miUIFramework.Install() 时统一建立
     }
     
     // 该职业的起手
     public IOpener? GetOpener()
     {
-        if (!PromeSettings.Instance.GetQt(GunbreakerQT.启用起手) || Core.Me == null)
+        if (Core.Me == null)
             return null;
 
         var openerName = "";
@@ -138,6 +124,26 @@ public class GunbreakerRotation : IRotation
                 break;
             case GunbreakerSettings.起手选择枚举.无情2g起手:
                 openerName = "无情2g起手";
+                openerSource = "Settings";
+                break;
+            case GunbreakerSettings.起手选择枚举.绝欧起手:
+                openerName = "绝欧起手";
+                openerSource = "Settings";
+                break;
+            case GunbreakerSettings.起手选择枚举.龙诗起手:
+                openerName = "龙诗起手";
+                openerSource = "Settings";
+                break;
+            case GunbreakerSettings.起手选择枚举.绝亚起手:
+                openerName = "绝亚起手";
+                openerSource = "Settings";
+                break;
+            case GunbreakerSettings.起手选择枚举.神兵起手:
+                openerName = "神兵起手";
+                openerSource = "Settings";
+                break;
+            case GunbreakerSettings.起手选择枚举.巴哈起手:
+                openerName = "巴哈起手";
                 openerSource = "Settings";
                 break;
         }
@@ -275,121 +281,4 @@ public class GunbreakerRotation : IRotation
         
     }
 
-    public void DrawSettings()
-    {
-        if (ImGui.BeginTabBar("Settings"))
-        {
-            if (ImGui.BeginTabItem("设置"))
-            {
-                DrawGeneral();
-                ImGui.EndTabItem();
-            }
-            if (ImGui.BeginTabItem("开发用"))
-            {
-                DrawDev();
-                ImGui.EndTabItem();
-            }
-        }
-    }
-
-    private void DrawGeneral()
-    {
-        ImGui.Dummy(new Vector2(0, 5));
-        ImGui.TextColored(new Vector4(1f, 0.8f, 0.6f, 1f), "—————— 通用设置 ——————");
-
-        var workMode = (int)GunbreakerSettings.Instance.当前工作模式;
-        string[] workModeOptions = { "高难模式", "日常模式" };
-        ImGui.SetNextItemWidth(200f);
-        if (ImGui.Combo("工作模式", ref workMode, workModeOptions, workModeOptions.Length))
-            GunbreakerSettings.Instance.当前工作模式 = (GunbreakerSettings.工作模式枚举)workMode;
-
-        var st = GunbreakerSettings.Instance.ST;
-        if (ImGui.Checkbox("单体模式(ST)", ref st))
-            GunbreakerSettings.Instance.ST = st;
-
-        var aoeCount = GunbreakerSettings.Instance.AOE数;
-        ImGui.SetNextItemWidth(200f);
-        if (ImGui.SliderInt("AOE目标数", ref aoeCount, 1, 10))
-            GunbreakerSettings.Instance.AOE数 = aoeCount;
-
-        ImGui.Spacing();
-
-        var reservedAmmo = GunbreakerSettings.Instance.保留子弹数;
-        ImGui.SetNextItemWidth(200f);
-        if (ImGui.SliderInt("保留子弹数", ref reservedAmmo, 0, 3))
-            GunbreakerSettings.Instance.保留子弹数 = reservedAmmo;
-
-        ImGui.Separator();
-        ImGui.TextColored(new Vector4(0.7f, 1f, 0.7f, 1f), "—————— 起手设置 ——————");
-
-        var openerMode = (int)GunbreakerSettings.Instance.开怪方式;
-        string[] openerModeOptions = { "关闭", "突进", "闪雷弹" };
-        ImGui.SetNextItemWidth(200f);
-        if (ImGui.Combo("开怪方式", ref openerMode, openerModeOptions, openerModeOptions.Length))
-            GunbreakerSettings.Instance.开怪方式 = (GunbreakerSettings.起手方式枚举)openerMode;
-
-        var openerAdvance = GunbreakerSettings.Instance.开怪提前时间;
-        ImGui.SetNextItemWidth(200f);
-        if (ImGui.SliderInt("开怪提前时间(ms)", ref openerAdvance, 0, 3000))
-            GunbreakerSettings.Instance.开怪提前时间 = openerAdvance;
-
-        ImGui.Spacing();
-
-        var openerSelect = (int)GunbreakerSettings.Instance.起手选择;
-        string[] openerSelectOptions = { "妖星起手", "无情2g起手" };
-        ImGui.SetNextItemWidth(200f);
-        if (ImGui.Combo("起手选择", ref openerSelect, openerSelectOptions, openerSelectOptions.Length))
-            GunbreakerSettings.Instance.起手选择 = (GunbreakerSettings.起手选择枚举)openerSelect;
-
-        ImGui.Dummy(new Vector2(0, 5));
-    }
-    
-    private void DrawDev()
-    {
-        ImGui.Dummy(new Vector2(0, 5));
-
-        var debug = GunbreakerSettings.Instance.debug;
-        if (ImGui.Checkbox("Debug模式", ref debug))
-            GunbreakerSettings.Instance.debug = debug;
-
-        ImGui.Separator();
-        ImGui.TextUnformatted($"子弹连充能: {ActionHelper.GetActionCharges(GunbreakerSkill.烈牙)}");
-        ImGui.TextUnformatted($"子弹连CD: {ActionHelper.GetActionCooldown(ActionHelper.GetAdjustedActionId(GunbreakerSkill.烈牙))}");
-        
-        ImGui.TextColored(new Vector4(0.5f, 1f, 1f, 1f), "—————— Solver状态 ——————");
-
-        if (RotationManager.GcdSolverStatus.Count > 0)
-        {
-            if (ImGui.BeginChild("SolverStatus", new Vector2(0, 400), true))
-            {
-                ImGui.TextColored(new Vector4(1f, 1f, 0.7f, 1f), "Always / Gcd Solver:");
-                foreach (var status in RotationManager.GcdSolverStatus)
-                {
-                    var color = status.Success
-                        ? new Vector4(0.3f, 1f, 0.3f, 1f)
-                        : new Vector4(0.7f, 0.7f, 0.7f, 1f);
-                    ImGui.TextColored(color, $"  [{status.Name}] {(status.Success ? "O" : "X")} {status.Message}");
-                }
-
-                ImGui.Spacing();
-                ImGui.TextColored(new Vector4(1f, 0.8f, 1f, 1f), "OffGcd Solver:");
-                foreach (var status in RotationManager.OffGcdSolverStatus)
-                {
-                    var color = status.Success
-                        ? new Vector4(0.3f, 1f, 0.3f, 1f)
-                        : new Vector4(0.7f, 0.7f, 0.7f, 1f);
-                    ImGui.TextColored(color, $"  [{status.Name}] {(status.Success ? "O" : "X")} {status.Message}");
-                }
-
-                ImGui.EndChild();
-            }
-        }
-        else
-        {
-            ImGui.TextColored(new Vector4(0.6f, 0.6f, 0.6f, 1f), "  等待战斗数据...");
-        }
-
-        ImGui.Dummy(new Vector2(0, 5));
-    }
-    
 }

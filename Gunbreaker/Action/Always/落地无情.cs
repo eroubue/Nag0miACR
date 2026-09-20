@@ -8,10 +8,6 @@ public class 落地无情 : IDecisionResolver
 {
     public CheckResult Check()
     {
-        if (QT.QTGET(GunbreakerQT.停手))
-        {
-            return new CheckResult(false, "停止");
-        }
         if (!GunbreakerHelper.IsReady(GunbreakerSkill.无情))
         {
             return new CheckResult(false, "无情未冷却");

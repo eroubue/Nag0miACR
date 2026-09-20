@@ -19,7 +19,6 @@ public class 爆发击 : IDecisionResolver
 
         if (JobGaugeHelper.GNB.Ammo == 0) return new CheckResult(false, "无晶壤");
         
-        if (QT.QTGET(GunbreakerQT.停手)) return new CheckResult(false, "停止");
         if (!QT.QTGET(GunbreakerQT.爆发击)) return new CheckResult(false, "爆发击QT未开启");
         if (!GunbreakerHelper.IsReady(GunbreakerSkill.爆发击)) return new CheckResult(false, "技能未冷却");
         if (s_gnashingFangSlot.Check().Success)
@@ -33,7 +32,7 @@ public class 爆发击 : IDecisionResolver
         if (((ActionHelper.GetAdjustedActionId(GunbreakerSkill.烈牙) == GunbreakerSkill.猛兽爪 || ActionHelper.GetAdjustedActionId(GunbreakerSkill.烈牙) == GunbreakerSkill.凶禽爪)))
             return new CheckResult(false, "正在子弹连里不打");
         var aoeCount = TargetHelper.EnemyInRange(5);
-        if (aoeCount >= 2 && GunbreakerHelper.IsReady(GunbreakerSkill.命运之环)&&QT.QTGET(GunbreakerQT.AOE)&&!Core.Me.HasStatus(4192) &&! Core.Me.HasStatus(4194)) return new CheckResult(false, "AOE中优先命运之环");
+        if ((int)aoeCount >= GunbreakerAoe.FatedCircleBreakpoint(Core.Me.Level) && GunbreakerHelper.IsReady(GunbreakerSkill.命运之环)&&QT.QTGET(GunbreakerQT.AOE)&&!Core.Me.HasStatus(4192) &&! Core.Me.HasStatus(4194)) return new CheckResult(false, "AOE中优先命运之环");
 
         if (QT.QTGET(GunbreakerQT.仅使用爆发击卸除子弹)&&JobGaugeHelper.GNB.Ammo >= (byte) GunbreakerSettings.Instance.保留子弹数+1) return new CheckResult(true, "卸除子弹");
         if (ActionHelper.RecentlyUsed(GunbreakerSkill.无情,1000)&&!Core.Me.HasStatus(GunbreakerBuff.无情)) return new CheckResult(false, "防止放了无情但没出buff");
@@ -48,8 +47,9 @@ public class 爆发击 : IDecisionResolver
                 ActionHelper.GetLastComboID() == GunbreakerSkill.残暴弹) return new CheckResult(true, "溢出时打");
             if (JobGaugeHelper.GNB.Ammo == 3 &&
                 ActionHelper.GetLastComboID() == GunbreakerSkill.恶魔切) return new CheckResult(true, "溢出时打");
-            if (QT.QTGET(GunbreakerQT.无情)&&ActionHelper.GetActionCooldown(GunbreakerSkill.无情) * 1000f <= 10000 && ActionHelper.GetLastComboID() == GunbreakerSkill.迅连斩 && JobGaugeHelper.GNB.Ammo != 1)return new CheckResult(true, "无情前10秒打爆发击");
-            if (QT.QTGET(GunbreakerQT.无情)&&ActionHelper.GetActionCooldown(GunbreakerSkill.无情) * 1000f <= 2500 && ActionHelper.GetLastComboID() == GunbreakerSkill.迅连斩 )return new CheckResult(true, "无情前2.5秒打爆发击");
+            if (QT.QTGET(GunbreakerQT.无情)&&ActionHelper.GetActionCooldown(GunbreakerSkill.无情)  <= 13.9 && ActionHelper.GetLastComboID() == GunbreakerSkill.迅连斩 && JobGaugeHelper.GNB.Ammo != 1)return new CheckResult(true, "无情前13秒打爆发击");
+            if (JobGaugeHelper.GNB.Ammo >1&&QT.QTGET(GunbreakerQT.无情)&&ActionHelper.GetActionCooldown(GunbreakerSkill.无情)  <= 2.5 && ActionHelper.GetLastComboID() == GunbreakerSkill.迅连斩 )return new CheckResult(true, "无情前2.5秒打爆发击");
+            if (JobGaugeHelper.GNB.Ammo ==1&&QT.QTGET(GunbreakerQT.无情)&&ActionHelper.GetActionCooldown(GunbreakerSkill.无情)  <= 2.5&&ActionHelper.GetActionCooldown(GunbreakerSkill.血壤)  <= ActionHelper.GetActionCooldown(GunbreakerSkill.无情) && ActionHelper.GetLastComboID() == GunbreakerSkill.迅连斩 )return new CheckResult(true, "无情前2.5秒打爆发击");
 
             return new CheckResult(false, "不打");
         }

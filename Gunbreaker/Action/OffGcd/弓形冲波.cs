@@ -22,16 +22,11 @@ namespace Nag0mi.Gunbreaker.Action.OffGcd
             {
                 return new CheckResult(false, "技能未就绪");
             }
-            if (QT.QTGET(GunbreakerQT.停手))
-            {
-                return new CheckResult(false, "停手QT已开启");
-            }
-
             if (QT.QTGET(GunbreakerQT.倾泻爆发))
             {
                 return new CheckResult(true, "倾泻爆发QT开启");
             }
-            if (!QT.QTGET(GunbreakerQT.爆发) || !QT.QTGET(GunbreakerQT.dot) || !QT.QTGET(GunbreakerQT.弓形))
+            if (!QT.QTGET(GunbreakerQT.爆发)  || !QT.QTGET(GunbreakerQT.弓形))
             {
                 return new CheckResult(false, "QT未开启");
             }

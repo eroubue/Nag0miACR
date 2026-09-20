@@ -20,13 +20,9 @@ public class 领域 : IDecisionResolver
         {
             return new CheckResult(false, "危险领域未冷却");
         }
-        if (QT.QTGET(GunbreakerQT.停手))
-        {
-            return new CheckResult(false, "停止");
-        }
         if (QT.QTGET(GunbreakerQT.倾泻爆发))
         {
-            return new CheckResult(false, "倾泻爆发QT已开启跳过检查");
+            return new CheckResult(true, "倾泻爆发");
         }
         if (!QT.QTGET(GunbreakerQT.爆发))
         {

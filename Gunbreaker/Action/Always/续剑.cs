@@ -17,11 +17,7 @@ public class 续剑 : IDecisionResolver
         {
             return new CheckResult(false, "当前不可使用");
         }
-        if (QT.QTGET(GunbreakerQT.停手))
-        {
-            return new CheckResult(false, "停手QT");
-        }
-        if ((GunbreakerHelper.IsReady(GunbreakerSkill.无情)||GunbreakerHelper.AbilityCoolDownInNextXGcdsWindow(GunbreakerSkill.无情,0)&&ActionHelper.GetGcdRemain() >= 0.6)&&QT.QTGET(GunbreakerQT.无情)&&QT.QTGET(GunbreakerQT.爆发))
+        if ((GunbreakerHelper.IsReady(GunbreakerSkill.无情)||GunbreakerSkill.无情.AbilityCoolDownInNextXGcdsWindow(0)&&ActionHelper.GetGcdRemain() >= 0.6)&&QT.QTGET(GunbreakerQT.无情)&&QT.QTGET(GunbreakerQT.爆发))
         {
             return new CheckResult(false, "无情已冷却优先放无情");
         }

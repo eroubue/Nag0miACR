@@ -17,9 +17,12 @@ public class AOEbase : IDecisionResolver
         if (Core.Target != null && Core.Target.DistanceToMe() >  5.0)
             return new CheckResult(false, "距离大于5米");
         var aoeCount = TargetHelper.EnemyInRange(5);
-        var AOE数 = GunbreakerSettings.Instance.AOE数;
+        // 当前等级下 AOE 基础连威力不低于单体 123 的最小目标数（按已习得技能威力自动计算）
+        var breakpoint = GunbreakerAoe.BasicComboBreakpoint(Core.Me.Level);
+        // 连击窗口内预计会死的敌人不计入：打不完的 AOE 连击没有收益
+        var horizon = (ActionHelper.GetLastComboID() == GunbreakerSkill.恶魔切 ? 1 : 2) * ActionHelper.GetGcdTotal();
+        var effectiveCount = Math.Max(0, (int)aoeCount - GunbreakerAoeTracker.CountDyingEnemies(horizon));
      
-        if (QT.QTGET(GunbreakerQT.停手)) return new CheckResult(false, "停止");
         if (!QT.QTGET(GunbreakerQT.AOE)) return new CheckResult(false, "AOEQT未开启");
         if (!GunbreakerHelper.IsReady(GunbreakerSkill.恶魔切)) return new CheckResult(false, "恶魔切未冷却");
         if (ActionHelper.GetLastComboID() == GunbreakerSkill.残暴弹) return new CheckResult(false, "连击中不打");
@@ -28,14 +31,16 @@ public class AOEbase : IDecisionResolver
         if (ActionHelper.GetAdjustedActionId(GunbreakerSkill.烈牙) == GunbreakerSkill.烈牙&&fangcd <= 1000&&JobGaugeHelper.GNB.Ammo>=1&&QT.QTGET(GunbreakerQT.子弹连)&&QT.QTGET(GunbreakerQT.爆发)) return new CheckResult(false, "-103");//对齐子弹连*/
         if (ActionHelper.GetLastComboID() == GunbreakerSkill.恶魔切)
         {
+            // 有效敌数已低于平衡点（敌人将死/数量不足）：恶魔杀落点无收益，中断改打单体
+            if (effectiveCount < breakpoint) return new CheckResult(false, "AOE收益不足，中断连击");
             if (GunbreakerHelper.IsReady(GunbreakerSkill.恶魔杀) && Core.Me.Level >= 40) return new CheckResult(true, "可释放恶魔杀");
             return new CheckResult(false, "无连击不打");
         }
 
         if (Core.Me.HasStatus(4192) || Core.Me.HasStatus(4194)) return new CheckResult(false, "妖星乱舞绝境战，有应战buff不打");
-        if (aoeCount >= AOE数) return new CheckResult(true, "可释放基础AOE");
+        if (effectiveCount >= breakpoint) return new CheckResult(true, "可释放基础AOE");
         
-        return new CheckResult(false, "AOE数量不足");
+        return new CheckResult(false, effectiveCount < aoeCount ? "敌人即将死亡，AOE连击无收益" : "AOE数量不足");
     }
     
 

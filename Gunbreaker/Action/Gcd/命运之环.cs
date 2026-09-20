@@ -17,16 +17,16 @@ public class 命运之环 : IDecisionResolver
        
         if (Core.Target != null && Core.Target.DistanceToMe() >  5.0)
             return new CheckResult(false, "距离大于5米");
+        if (JobGaugeHelper.GNB.Ammo == 0) return new CheckResult(false, "无晶壤");
        
         if (!GunbreakerHelper.IsReady(GunbreakerSkill.命运之环)) return new CheckResult(false, "命运之环未冷却");
-        if (QT.QTGET(GunbreakerQT.停手))  return new CheckResult(false, "停止"); 
         if (!QT.QTGET(GunbreakerQT.AOE)) return new CheckResult(false, "AOEQT未开启");
         if (!QT.QTGET(GunbreakerQT.命运之环)) return new CheckResult(false, "命运之环QT未开启");
         
         if (ActionHelper.RecentlyUsed(GunbreakerSkill.无情,1000)&&!Core.Me.HasStatus(GunbreakerBuff.无情)) return new CheckResult(false, "防止放了无情但没出buff");
         var aoeCount = TargetHelper.EnemyInRange(5);
-        var AOE数 = GunbreakerSettings.Instance.AOE数;
-        if (aoeCount < AOE数) return new CheckResult(false, "AOE数量不足");
+        var breakpoint = GunbreakerAoe.FatedCircleBreakpoint(Core.Me.Level);
+        if ((int)aoeCount < breakpoint) return new CheckResult(false, "AOE数量不足");
         if (Core.Me.HasStatus(4192) || Core.Me.HasStatus(4194)) return new CheckResult(false, "妖星乱舞绝境战，有应战buff不打");
         
         if (Core.Me.HasStatus(GunbreakerBuff.无情)) return new CheckResult(true, "无情中打");

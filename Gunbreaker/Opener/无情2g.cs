@@ -1,4 +1,4 @@
-﻿using Nag0mi.Gunbreaker.Data;
+using Nag0mi.Gunbreaker.Data;
 using PromeRotation.Core;
 using PromeRotation.Data;
 using PromeRotation.Extensions;
@@ -49,7 +49,7 @@ public class 无情2g : IOpener
                 {
                     RequiresVerification = true
                 });
-        if (QT.QTGET(GunbreakerQT.突进起手))
+        if (GunbreakerSettings.Instance.突进起手)
 
             countdownHandler.AddAction(
                 300,

@@ -22,7 +22,6 @@ namespace Nag0mi.Gunbreaker.Action.Gcd
            
             if (!GunbreakerHelper.IsReady(GunbreakerSkill.闪雷弹)) return new CheckResult(false, "技能未就绪");
             
-            if (QT.QTGET(GunbreakerQT.停手)) return new CheckResult(false, "停止");
             if (!QT.QTGET(GunbreakerQT.闪雷弹)) return new CheckResult(false, "闪雷弹QT未开启");
             if (ActionHelper.RecentlyUsed(GunbreakerSkill.弹道,1000)) return new CheckResult(false, "一秒内使用过突进");
             return new CheckResult(true, "可释放闪雷弹");

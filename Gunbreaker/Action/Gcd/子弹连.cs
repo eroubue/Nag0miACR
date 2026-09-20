@@ -23,8 +23,6 @@ public class 子弹连 : IDecisionResolver
         if (GunbreakerHelper.烈牙层数() < 1f) return new CheckResult(false, "烈牙层数小于1");*/
         if (!GunbreakerHelper.IsReady (GunbreakerSkill.烈牙)) return new CheckResult(false, "烈牙未就绪");
 
-        if (QT.QTGET(GunbreakerQT.停手)) return new CheckResult(false, "停止");
-
         if (!QT.QTGET(GunbreakerQT.爆发)) return new CheckResult(false, "爆发QT未开启");
         if (JobGaugeHelper.GNB.Ammo == 0&&ActionHelper.GetAdjustedActionId(GunbreakerSkill.烈牙) == GunbreakerSkill.烈牙) return new CheckResult(false, "无晶壤");
         //if (QT.QTGET(GunbreakerQT.倾泻爆发)&& JobGaugeHelper.GNB.Ammo >= (byte) GNBSettings.Instance.保留子弹数+1&&!QT.QTGET(GunbreakerQT.仅使用爆发击卸除子弹)) return new CheckResult(true, "10");
@@ -41,15 +39,15 @@ public class 子弹连 : IDecisionResolver
 
         if (Core.Me.HasStatus(GunbreakerBuff.无情) &&
             ActionHelper.GetAdjustedActionId(GunbreakerSkill.烈牙) != GunbreakerSkill.烈牙 &&
-            GunbreakerHelper.IsReady(GunbreakerSkill.音速破) && QT.QTGET(GunbreakerQT.dot) && QT.QTGET(GunbreakerQT.音速破)&&Core.Me.HasStatus(GunbreakerBuff.音速破预备))
+            GunbreakerHelper.IsReady(GunbreakerSkill.音速破) && QT.QTGET(GunbreakerQT.音速破)&&Core.Me.HasStatus(GunbreakerBuff.音速破预备))
             return new CheckResult(false, "优先音速破");
 
 
 
         var aoeCount = TargetHelper.EnemyInRange(5);
-        if (Core.Me.Level >= 72 && aoeCount >= 3 && GunbreakerHelper.IsReady(GunbreakerSkill.命运之环) &&
-            QT.QTGET(GunbreakerQT.AOE) && QT.QTGET(GunbreakerQT.命运之环)) //敌人数量大于3不打子弹连
-            return new CheckResult(false, "AOE数量大于3优先命运之环");
+        if (Core.Me.Level >= 72 && (int)aoeCount >= GunbreakerAoe.GnashingFangBreakpoint(Core.Me.Level) && GunbreakerHelper.IsReady(GunbreakerSkill.命运之环) &&
+            QT.QTGET(GunbreakerQT.AOE) && QT.QTGET(GunbreakerQT.命运之环)) //目标数达到当前等级AOE平衡点不打子弹连
+            return new CheckResult(false, "目标数达到AOE平衡点优先命运之环");
         if (ActionHelper.RecentlyUsed(GunbreakerSkill.无情, 1000) && !Core.Me.HasStatus(GunbreakerBuff.无情))
             return new CheckResult(false, "防止放了无情但没出buff");
         //if (QT.QTGET(GunbreakerQT.音速破) && !Helper.自身存在Buff大于时间(Buffs.音速破预备, 5000)) return new CheckResult(false, "-51");

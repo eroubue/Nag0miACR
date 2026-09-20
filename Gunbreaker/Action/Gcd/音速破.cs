@@ -18,13 +18,11 @@ public class 音速破 : IDecisionResolver
         if (!GunbreakerHelper.IsReady(GunbreakerSkill.音速破)) return new CheckResult(false, "音速破未冷却");
         if(!Core.Me.HasStatus(GunbreakerBuff.音速破预备))return new CheckResult(false, "无音速破预备buff");
        
-        if (QT.QTGET(GunbreakerQT.停手)) return new CheckResult(false, "停止");
         if (!QT.QTGET(GunbreakerQT.爆发)) return new CheckResult(false, "爆发QT未开启");
-        if (!QT.QTGET(GunbreakerQT.dot)) return new CheckResult(false, "dotQT未开启");
         if (!QT.QTGET(GunbreakerQT.音速破)) return new CheckResult(false, "音速破QT未开启");
         if(!QT.QTGET(GunbreakerQT.优先音速破)&&Core.Me.HasStatus(GunbreakerBuff.无情)&&ActionHelper.GetActionCharges(ActionHelper.GetAdjustedActionId(GunbreakerSkill.烈牙))>=1.95)return new CheckResult(false, "优先子弹连");
         var aoecount = TargetHelper.EnemyInRange(5);
-        if (Core.Me.Level >=72 && aoecount >= 5) return new CheckResult(false, "AOE数量大于5不走单");
+        if ((int)aoecount >= GunbreakerAoe.SonicBreakBreakpoint(Core.Me.Level)) return new CheckResult(false, "目标数达到AOE平衡点不走单");
 
         return new CheckResult(true, "可释放音速破");
     }

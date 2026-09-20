@@ -12,8 +12,7 @@ public class 无情 : IDecisionResolver
     {
         
         if (ActionHelper.GetGcdRemain()<= 0.65) return new CheckResult(false, "GCD剩余不足");
-        if (QT.QTGET(GunbreakerQT.停手)) return new CheckResult(false, "停止");
-        
+
         if (!GunbreakerHelper.IsReady(GunbreakerSkill.无情)) return new CheckResult(false, "无情未冷却");
         if (QT.QTGET(GunbreakerQT.倾泻爆发)) return new CheckResult(true, "倾泻爆发");
         if (!QT.QTGET(GunbreakerQT.爆发)||!QT.QTGET(GunbreakerQT.无情)) return new CheckResult(false, "无情QT或爆发QT未开启");

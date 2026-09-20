@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="*.cs" />
+    <Compile Include="../Common/Data/OrderMergeHelper.cs" />
+    <Compile Include="../Common/Data/CustomHotkeyTarget.cs" />
+    <Compile Include="../Common/UI/SwapOrderHelper.cs" />
+    <Compile Include="../Gunbreaker/Control/*.cs" />
+    <Compile Include="../Gunbreaker/Data/GunbreakerAoe.cs" />
+    <Compile Include="../Gunbreaker/Data/GunbreakerQtIcons.cs" />
+    <Compile Include="../Gunbreaker/Data/GunbreakerQT.cs" />
+    <Compile Include="../Gunbreaker/Data/GunbreakerSettings.cs" />
+    <Compile Include="../Gunbreaker/Data/GunbreakerQtDefaults.cs" />
+    <Compile Include="../Gunbreaker/Data/GunbreakerSkill.cs" />
+  </ItemGroup>
+</Project>

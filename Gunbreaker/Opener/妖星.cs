@@ -50,7 +50,7 @@ public class 妖星 : IOpener
                     RequiresVerification = true
                 });
         
-        if (QT.QTGET(GunbreakerQT.突进起手))
+        if (GunbreakerSettings.Instance.突进起手)
 
             countdownHandler.AddAction(
                 300,

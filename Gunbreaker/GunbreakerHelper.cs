@@ -33,16 +33,7 @@ public static class GunbreakerHelper
         
         return ActionHelper.GetActionCooldown(adjusted)<=0.3;
     }
-    public static bool IsReadyFang(uint actionId)
-    {
-        var adjusted = ActionHelper.GetAdjustedActionId(actionId);
-        if (adjusted == 0 || !ActionHelper.IsActionAvailableByLevelAndQuest(adjusted)||Core.Me == null||GameData.IsPlayerOccupied()||ActionHelper.RecentlyUsed(adjusted,300)&&烈牙层数() < 1f)
-        {
-            return false;
-        }
-        
-        return true;
-    }
+
     
     /// <summary>
     /// 检测在自己的buff剩余时间内某个技能冷却能否结束
@@ -77,14 +68,7 @@ public static class GunbreakerHelper
     {
         return ActionHelper.GetActionCooldown(spellId)<=(ActionHelper.GetGcdTotal() * count);
     }
-    public static bool AbilityCoolDownInNextXGcdsWindow(this uint actionId, int count)
-    {
-        float gcdRemain = ActionHelper.GetGcdRemain();
-        float gcdTotal = ActionHelper.GetGcdTotal();
-        float cooldownRemain = ActionHelper.GetActionCooldown(actionId);
 
-        return cooldownRemain < gcdRemain + count * gcdTotal - 0.3f;
-    }
     public static float 烈牙层数()
     {
         var player = Core.Me;
