@@ -4,7 +4,7 @@ namespace Nag0mi.Common.Data;
 // 并在此处追加对应条目（日期 / 版本 / 内容）。Version 与清单文件中的 version 保持一致。
 public static class AcrChangelog
 {
-    public const string Version = "1.1";
+    public const string Version = "1.3";
 
     public enum LineKind { Add, Remove, Note }
 
@@ -13,6 +13,17 @@ public static class AcrChangelog
 
     public static readonly Entry[] Entries =
     [
+        new("2026-09-21", "1.3",
+        [
+            new(LineKind.Note, "冷却计时秒数移到格子左下角"),
+            new(LineKind.Remove, "修复冷却倒计时圈方向：弧随剩余时间从顶部顺时针消减"),
+            new(LineKind.Add, "冷却中整格加 45% 压暗遮罩，倒计时状态更明显"),
+        ]),
+        new("2026-09-21", "1.2",
+        [
+            new(LineKind.Note, "热键角标尺寸/透明度调整：充能角标右下角占格子 1/16 面积"),
+            new(LineKind.Note, "数字/职能角标左上角占约 1/3 面积，以 70% 不透明度绘制"),
+        ]),
         new("2026-09-20", "1.1",
         [
             new(LineKind.Add, "设置页新增「更新日志」页签"),
