@@ -22,8 +22,8 @@ public abstract partial class SettingsWindowBase : Window
     // 基础全局样式的颜色 Push 数量（Pop 时使用；侧边栏 chrome 在此基础上增量 Push，见 SidebarChromeColorCount）。
     private const int BaseStyleColorCount = 22;
 
-    // 暗色 chrome 底色：半透明深灰（显式 AddRectFilled 填充，不做模糊）。
-    private static readonly Vector4 BackgroundTint = new(0.11f, 0.11f, 0.12f, 0.85f);
+    // 原生标题显示文字（标题栏实际绘制改由书法字体覆盖层承担，见 DrawTitleOverlay）
+    private readonly string titleText;
 
     // Tab 列表
     protected abstract string[] Tabs { get; }
@@ -57,6 +57,9 @@ public abstract partial class SettingsWindowBase : Window
     protected SettingsWindowBase(string title)
         : base(title, ImGuiWindowFlags.NoCollapse)
     {
+        titleText = title;
+        // 原生标题文字让位给书法字体覆盖层（### 后缀保持 ImGui 窗口标识不变）
+        WindowName = $"###Nag0miUI.Settings.{GetType().Name}";
         // 最小尺寸兜底：防止历史损坏的持久化尺寸或 ImGui 异常把窗口锁死
         SizeConstraints = new WindowSizeConstraints
         {
@@ -106,10 +109,13 @@ public abstract partial class SettingsWindowBase : Window
     {
         try
         {
-            // 自定义背景图优先, 未启用/加载失败时画纯色半透明背景
+            // 自定义背景图优先, 未启用/加载失败时画宣纸底
             DrawWindowBackground();
 
             DrawSidebarLayout();
+
+            // 书法字体标题覆盖层（标题栏底色由 chrome 样式压入的血红深色承载）
+            DrawTitleOverlay();
 
             // 仅在窗口当前有效时捕获位置/尺寸；待用户拖动/缩放结束后一次性写盘
             CaptureLayout();
@@ -190,22 +196,49 @@ public abstract partial class SettingsWindowBase : Window
 
         // 底色画进窗口自身的绘制列表，先垫占位命令防止背景模糊顶掉首条绘制（见 Nag0miUILayer），
         // 保证两个窗口重叠时背景仍然盖住身后窗口的内容
-        var min = ImGui.GetWindowPos() + new Vector2(0.5f);
-        var max = min + ImGui.GetWindowSize() - new Vector2(1f);
+        var min = ImGui.GetWindowPos();
+        var size = ImGui.GetWindowSize();
 
-        // 圆角必须与 PreDraw 压入的 WindowRounding(12f) 完全一致，否则底色的角与窗口边框错位
-        var rounding = 12f;
         var drawList = ImGui.GetWindowDrawList();
         Nag0miUILayer.垫牺牲帧(drawList);
         // 背景画满全窗口但让出标题栏: Begin 给窗口 draw list 压的是内容区内层裁剪（减内边距）,
         // 不覆盖会把底色四条边各裁掉一条; 标题栏区不铺底色, 保持原生标题栏可读
-        drawList.PushClipRect(new Vector2(ImGui.GetWindowPos().X, ImGui.GetWindowPos().Y + ImGui.GetFrameHeight()),
-            ImGui.GetWindowPos() + ImGui.GetWindowSize(), false);
-        // 自定义背景图（设置页「个性化」配置）优先于默认底色
+        drawList.PushClipRect(new Vector2(min.X, min.Y + ImGui.GetFrameHeight()),
+            min + size, false);
+        // 自定义背景图（设置页「个性化」配置）优先于默认宣纸底；
+        // 默认底 = 宣纸平铺 + 山水装饰层（纸底之上、内容之下, 非交互）
         if (!WindowBackgroundManager.DrawBackgroundImage(drawList,
-                Nag0miUICommonSettings.Instance.设置窗口背景, min, ImGui.GetWindowSize() - new Vector2(1f), rounding))
-            drawList.AddRectFilled(min, max, SimplePalette.ToU32(BackgroundTint), rounding, ImDrawFlags.RoundCornersAll);
+                Nag0miUICommonSettings.Instance.设置窗口背景, min + new Vector2(0.5f), size - new Vector2(1f), 4f))
+        {
+            ShuimoDraw.DrawPaper(drawList, min, min + size, 0.95f);
+            ShuimoDraw.DrawMountains(drawList, min, min + size);
+        }
         drawList.PopClipRect();
+
+        // 窗口外壳笔触边框（9-slice, 含标题栏整圈）
+        drawList.PushClipRectFullScreen();
+        ShuimoDraw.DrawBrushFrame(drawList, min, min + size);
+        drawList.PopClipRect();
+    }
+
+    // 标题栏书法字体覆盖层：原生标题文字已置空（构造时 WindowName 改为 ###id），
+    // 标题文字用 Ma Shan Zheng 标题字体以缟羽色画在血红标题栏上；字体未就绪时当帧跳过。
+    private void DrawTitleOverlay()
+    {
+        var font = ShuimoFont.Title;
+        if (font == null || !font.Available) return;
+
+        var pos = ImGui.GetWindowPos();
+        var frameH = ImGui.GetFrameHeight();
+        var drawList = ImGui.GetWindowDrawList();
+        using (font.Push())
+        {
+            var textSize = ImGui.CalcTextSize(titleText);
+            var textPos = new Vector2(pos.X + 10f, pos.Y + (frameH - textSize.Y) * 0.5f);
+            drawList.PushClipRectFullScreen();
+            drawList.AddText(textPos, SimplePalette.ToU32(ShuimoPalette.Hex(0xEEEEEE)), titleText);
+            drawList.PopClipRect();
+        }
     }
 
     private void PushGlobalStyle()
@@ -252,16 +285,16 @@ public abstract partial class SettingsWindowBase : Window
 
         PushChromeColors();
 
-        // 变量
-        ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, 12f);
-        ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 6f);
-        ImGui.PushStyleVar(ImGuiStyleVar.PopupRounding, 6f);
+        // 变量（窗口圆角 4：纸页的直角微圆感; 原生 1px 边框关闭, 改由笔触边框承载）
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, 4f);
+        ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 3f);
+        ImGui.PushStyleVar(ImGuiStyleVar.PopupRounding, 3f);
         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(16f, 12f));
         ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(8f, 4f));
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(8f, 6f));
         ImGui.PushStyleVar(ImGuiStyleVar.ItemInnerSpacing, new Vector2(6f, 4f));
         ImGui.PushStyleVar(ImGuiStyleVar.ScrollbarSize, 10f);
-        ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 1f);
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
     }
 
     // 暗色 chrome 样式：标题栏与滚动条跟随主色调（原 ErosUI 夜间模式实现，内联为唯一一套）。

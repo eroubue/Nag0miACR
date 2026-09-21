@@ -57,6 +57,10 @@ public abstract partial class SettingsWindowBase
             // 导航文字左对齐
             ImGui.PushStyleVar(ImGuiStyleVar.ButtonTextAlign, new Vector2(0f, 0.5f));
 
+            // 侧边栏页签用标题书法字体（未就绪时自动回落默认字体）
+            var titleFont = ShuimoFont.Title;
+            var fontPop = titleFont is { Available: true } ? titleFont.Push() : null;
+
             var now = ImGui.GetTime();
             var labels = AllTabs;
 
@@ -99,9 +103,10 @@ public abstract partial class SettingsWindowBase
                 var isActive = i == currentTab;
                 if (isActive)
                 {
-                    ImGui.PushStyleColor(ImGuiCol.Button, SimplePalette.NavActiveBg);
-                    ImGui.PushStyleColor(ImGuiCol.ButtonHovered, SimplePalette.WithAlpha(SimplePalette.Accent, 0.25f));
-                    ImGui.PushStyleColor(ImGuiCol.ButtonActive, SimplePalette.WithAlpha(SimplePalette.Accent, 0.35f));
+                    // 激活项：透明底 + 血红字, 左侧 3px 血红竖条（按钮绘制后补画）
+                    ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
+                    ImGui.PushStyleColor(ImGuiCol.ButtonHovered, SimplePalette.WithAlpha(SimplePalette.Accent, 0.12f));
+                    ImGui.PushStyleColor(ImGuiCol.ButtonActive, SimplePalette.WithAlpha(SimplePalette.Accent, 0.22f));
                     ImGui.PushStyleColor(ImGuiCol.Text, SimplePalette.NavActiveText);
                 }
                 else
@@ -118,8 +123,20 @@ public abstract partial class SettingsWindowBase
                     currentTab = i;
                 ImGui.PopStyleVar();
 
+                // 激活项左侧 3px 血红竖条（跟随展开动效透明度）
+                if (isActive)
+                {
+                    var itemMin = ImGui.GetItemRectMin();
+                    var itemMax = ImGui.GetItemRectMax();
+                    var bar = SimplePalette.NavActiveText;
+                    ImGui.GetWindowDrawList().AddRectFilled(
+                        itemMin + new Vector2(0f, 3f), new Vector2(itemMin.X + 3f, itemMax.Y - 3f),
+                        SimplePalette.ToU32(SimplePalette.WithAlpha(bar, bar.W * t)), 1.5f);
+                }
+
                 ImGui.PopStyleColor(4);
             }
+            fontPop?.Dispose();
             ImGui.PopStyleVar();
         }
         finally

@@ -4,7 +4,7 @@ namespace Nag0mi.Common.Data;
 // 并在此处追加对应条目（日期 / 版本 / 内容）。Version 与清单文件中的 version 保持一致。
 public static class AcrChangelog
 {
-    public const string Version = "1.4";
+    public const string Version = "1.5";
 
     public enum LineKind { Add, Remove, Note }
 
@@ -13,6 +13,14 @@ public static class AcrChangelog
 
     public static readonly Entry[] Entries =
     [
+        new("2026-09-21", "1.5",
+        [
+            new(LineKind.Add, "水墨主题：全部界面改为宣纸底/笔触边框/血红主色，支持明(冷宣)/暗(暖宣)手动切换（设置页「基础设置」勾选暗色模式，即改即存、下一帧全窗口生效）"),
+            new(LineKind.Add, "设置窗：山水装饰层、侧边栏激活项血红竖条+红字、手绘笔触勾选框、Ma Shan Zheng 书法标题字体（随包内置 GB2312 一级子集, SIL OFL）"),
+            new(LineKind.Add, "QT/热键面板：瓦片底铺宣纸，状态描边改为笔触边框按状态色染色（启用青/关闭血红）"),
+            new(LineKind.Note, "控制条：墨锭形态（京元深色实体底+缟羽图标），不铺宣纸"),
+            new(LineKind.Remove, "移除热键面板贴图缺失的文字角标降级分支（贴图随包内置恒存在）"),
+        ]),
         new("2026-09-21", "1.4",
         [
             new(LineKind.Add, "设置窗口新增「个性化」页：设置窗口/QT面板/热键面板可分别启用自定义字体（系统/游戏/字体文件）与自定义背景图（含透明度）"),

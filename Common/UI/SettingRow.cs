@@ -1,4 +1,5 @@
 // Portions Copyright (c) Eros001377, MIT License. Ported from ErosUI.
+using System.Numerics;
 using Dalamud.Bindings.ImGui;
 
 namespace Nag0mi.Common.UI;
@@ -17,11 +18,48 @@ public static class SettingRow
         SidebarSettingRow.SectionTitle(title);
     }
 
-    // bool 行：Checkbox。
+    // bool 行：水墨手绘 Checkbox（笔触框 + 墨点勾, 替换原生 CheckMark）。
     public static bool Checkbox(string label, ref bool value, string? tooltip = null)
     {
-        var changed = ImGui.Checkbox(label, ref value);
-        if (!string.IsNullOrEmpty(tooltip) && ImGui.IsItemHovered())
+        var drawList = ImGui.GetWindowDrawList();
+        var pos = ImGui.GetCursorScreenPos();
+        var frameH = ImGui.GetFrameHeight();
+        var boxSize = frameH;
+        var style = ImGui.GetStyle();
+        var textSize = ImGui.CalcTextSize(label);
+
+        // 不可见按钮占住整行（框 + 间距 + 文字）, 点击翻转
+        var total = new Vector2(boxSize + style.ItemInnerSpacing.X + textSize.X, frameH);
+        var changed = ImGui.InvisibleButton(label, total);
+        if (changed) value = !value;
+        var hovered = ImGui.IsItemHovered();
+
+        // 手绘勾选框（悬停染靛蓝）
+        var box = ShuimoDraw.笔触勾选框;
+        if (box != null)
+            drawList.AddImage(box.Handle, pos, pos + new Vector2(boxSize), Vector2.Zero, Vector2.One,
+                SimplePalette.ToU32(hovered ? ShuimoPalette.Hover : Vector4.One));
+
+        // 墨点勾：等比缩放到框内 75%, 染血红主色
+        if (value)
+        {
+            var check = ShuimoDraw.笔触墨点;
+            if (check != null)
+            {
+                var w = boxSize * 0.75f;
+                var h = w * check.Height / check.Width;
+                var cmin = pos + (new Vector2(boxSize) - new Vector2(w, h)) * 0.5f;
+                drawList.AddImage(check.Handle, cmin, cmin + new Vector2(w, h),
+                    Vector2.Zero, Vector2.One, SimplePalette.ToU32(ShuimoPalette.Main));
+            }
+        }
+
+        // 标签文字（与原生 Checkbox 同位置: 框右 + ItemInnerSpacing）
+        var textPos = new Vector2(pos.X + boxSize + style.ItemInnerSpacing.X,
+            pos.Y + (frameH - textSize.Y) * 0.5f);
+        drawList.AddText(textPos, SimplePalette.ToU32(ShuimoPalette.Text), label);
+
+        if (!string.IsNullOrEmpty(tooltip) && hovered)
             ImGui.SetTooltip(tooltip);
         return changed;
     }

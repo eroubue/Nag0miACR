@@ -13,6 +13,7 @@
     <Compile Include="../Common/UI/SwapOrderHelper.cs" />
     <Compile Include="../Common/UI/OverlayBerthShape.cs" />
     <Compile Include="../Common/UI/SimplePalette.cs" />
+    <Compile Include="../Common/UI/ShuimoPalette.cs" />
     <Compile Include="../Gunbreaker/Control/*.cs" />
     <Compile Include="../Gunbreaker/Data/GunbreakerAoe.cs" />
     <Compile Include="../Gunbreaker/Data/GunbreakerQtIcons.cs" />

@@ -27,6 +27,8 @@
     <!-- 面板贴图素材随构建复制到输出目录，运行时从程序集旁 UI\ 子目录加载 -->
     <ItemGroup>
       <None Include="Common\UI\*.png" Link="UI\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+      <None Include="Common\UI\*.ttf" Link="UI\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+      <None Include="Common\UI\MaShanZheng-OFL.txt" Link="UI\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
     <ItemGroup>
       <Folder Include="Gunbreaker\Timeline\" />

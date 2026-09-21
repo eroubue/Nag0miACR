@@ -67,6 +67,9 @@ public static class Nag0miUIFramework
         settings = new Nag0miUISettingsWindow();
         qtPanel = new Nag0miUIQtPanelWindow();
 
+        // 水墨主题明暗：从持久化设置同步到色板（之后由设置页切换控件就地更新）
+        ShuimoPalette.DarkMode = Nag0miUICommonSettings.Instance.DarkMode;
+
         // WindowLease 接管宿主：把宿主 SettingsWindow 移出 WindowSystem 并记住其注册/显隐状态，
         // 加入自家三窗口；Dispose 时逆序恢复。
         windows = new WindowLease<Window>(host.SettingsWindow,
@@ -90,6 +93,8 @@ public static class Nag0miUIFramework
         Nag0miUIHotkeyUI.Uninstall();
         WindowFontManager.Dispose();        // 自定义字体句柄缓存
         WindowBackgroundManager.Dispose();  // 背景图纹理缓存
+        ShuimoDraw.Dispose();               // 水墨内置贴图缓存
+        ShuimoFont.Dispose();               // 标题书法字体句柄
         if (windows != null)
         {
             try { windows.Dispose(); } catch { /* 宿主可能已改动窗口注册 */ }

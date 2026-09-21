@@ -103,6 +103,20 @@ public static class Nag0miUISettingsUI
 
         Hdr("基础设置");
         DrawModeSwitchRow();
+        DrawDarkModeRow();
+    }
+
+    // 水墨主题明/暗切换：改即落盘并写入 ShuimoPalette.DarkMode，色板每帧读取、下一帧全窗口生效
+    private static void DrawDarkModeRow()
+    {
+        var c = Nag0miUICommonSettings.Instance;
+        var dark = c.DarkMode;
+        if (SettingRow.Checkbox("暗色模式（暖宣）", ref dark, "切换水墨主题明/暗：明=冷宣纸底，暗=黑底暖宣"))
+        {
+            c.DarkMode = dark;
+            ShuimoPalette.DarkMode = dark;
+            c.Save();
+        }
     }
 
     // ============================================================

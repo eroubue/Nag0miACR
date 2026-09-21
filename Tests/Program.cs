@@ -17,6 +17,7 @@ internal static class Program
             CustomHotkeyTargetTests.Run();
             QtIconTests.Run();
             ModeButtonColorTests.Run();
+            ShuimoPaletteTests.Run();
             BerthShapeTests.Run();
             Console.WriteLine($"PASS: {Check.Assertions} assertions");
             return 0;

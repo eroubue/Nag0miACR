@@ -20,8 +20,10 @@ internal sealed class Nag0miUIControlWindow : Window
     // 逻辑尺寸（100% 缩放）：56×254，四键各 36px，纵向间距 46px；上下各 28 为融边预留（悬浮时透明）
     private static readonly Vector2 LogicalSize = new(OverlayBerthShape.Width, OverlayBerthShape.DockedHeight);
 
-    private static readonly Vector4 BgColor = new(.065f, .075f, .095f, .98f);
-    private static readonly Vector4 EdgeColor = new(.26f, .29f, .34f, .7f);
+    // 墨锭形态：京元深色实体底 + 缟羽描边（不铺宣纸——S 曲线融边轮廓是凸多边形,
+    // ImGui 不支持任意多边形贴图填充, 矩形裁切会在凹弧处穿帮; 墨锭配宣纸是完整的水墨语义）
+    private static readonly Vector4 BgColor = ShuimoPalette.InkStick with { W = .98f };
+    private static readonly Vector4 EdgeColor = ShuimoPalette.WithAlpha(ShuimoPalette.Hex(0xEEEEEE), .5f);
 
     private bool dragging;
     private Vector2 dragMouse;
@@ -197,8 +199,8 @@ internal sealed class Nag0miUIControlWindow : Window
         buttonHovered |= ImGui.IsItemHovered();
         Tooltip($"自动攻击：{(autoPull ? "已开启" : "已关闭")}\n左键切换");
 
-        // 4. 设置键（贴条展开设置窗口）
-        if (IconButton("Settings", FontAwesomeIcon.Cog, OverlayBerthShape.ButtonRows[3], new Vector4(.79f, .81f, .85f, 1)))
+        // 4. 设置键（贴条展开设置窗口; 缟羽图标）
+        if (IconButton("Settings", FontAwesomeIcon.Cog, OverlayBerthShape.ButtonRows[3], ShuimoPalette.Hex(0xEEEEEE)))
             Nag0miUIFramework.ToggleSettings();
         buttonHovered |= ImGui.IsItemHovered();
         Tooltip("打开／关闭完整设置");

@@ -28,6 +28,9 @@ public class Nag0miUICommonSettings
     public WindowBackgroundSettings Qt面板背景 = new();
     public WindowBackgroundSettings 热键面板背景 = new();
 
+    // 水墨主题明暗模式（false=明/冷宣, true=暗/暖宣; 设置页「通用」切换, 运行期镜像在 ShuimoPalette.DarkMode）
+    public bool DarkMode;
+
     // 单个窗口的持久化布局（JSON 可序列化；运行期状态在 SettingsWindowBase.WindowLayoutState）
     public sealed class WindowLayoutData
     {

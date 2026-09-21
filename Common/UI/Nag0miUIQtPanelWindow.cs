@@ -64,7 +64,7 @@ public sealed class Nag0miUIQtPanelWindow : Window
         ImGui.PushStyleColor(ImGuiCol.Text, SimplePalette.TextPrimary);
         ImGui.PushStyleColor(ImGuiCol.TextDisabled, SimplePalette.TextDisabled);
         ImGui.PushStyleColor(ImGuiCol.Border, SimplePalette.Border);
-        ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, 12f);
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, 4f);
         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(14f, 12f));
         base.PreDraw();
     }
@@ -249,13 +249,12 @@ public sealed class Nag0miUIQtPanelWindow : Window
         if (拖拽源 >= 0 || 按压已转拖动)
             hovered = false;
 
-        // 状态描边：启用绿 / 关闭红; 悬停微提亮
+        // 状态描边：启用青 / 关闭血红; 笔触边框按状态色染色, 悬停微提亮
         var border = on ? SimplePalette.QtOnBorder : SimplePalette.QtOffBorder;
         if (hovered)
             border = new Vector4(Math.Min(1f, border.X + 0.15f), Math.Min(1f, border.Y + 0.15f),
                 Math.Min(1f, border.Z + 0.15f), border.W);
-        drawList.AddRect(min, max, SimplePalette.ToU32(border), 圆角,
-            ImDrawFlags.RoundCornersAll, MathF.Max(1f, on ? 1.8f : 1.2f));
+        ShuimoDraw.DrawBrushStateFrame(drawList, min, max, border, on ? 5f : 4f);
 
         // 启用：底部约 3px 微光条（绿色）
         if (on)
@@ -348,6 +347,7 @@ public sealed class Nag0miUIQtPanelWindow : Window
 
     // 面板底色与边框：画进窗口自身的绘制列表（先垫占位命令，见 Nag0miUILayer），
     // 保证两个窗口重叠时背景仍然盖住身后窗口的内容。
+    // 水墨底 = 宣纸平铺（透明度沿用面板惯例 0.85）+ 笔触边框；QT 面板不铺山水（瓦片太小只剩噪点）。
     private void DrawWindowChrome()
     {
         var pos = ImGui.GetWindowPos();
@@ -357,15 +357,14 @@ public sealed class Nag0miUIQtPanelWindow : Window
         // 覆盖 Begin 压入的内容区内层裁剪, 底色/边框画满全窗口（本窗无标题栏）
         drawList.PushClipRect(pos, max, false);
 
-        var tint = new Vector4(0.11f, 0.11f, 0.12f, 0.85f);
-
-        // 自定义背景图（设置页「个性化」配置）优先于默认底色
+        // 自定义背景图（设置页「个性化」配置）优先于默认宣纸底
         if (!WindowBackgroundManager.DrawBackgroundImage(drawList,
-                Nag0miUICommonSettings.Instance.Qt面板背景, pos, ImGui.GetWindowSize(), 12f))
-            drawList.AddRectFilled(pos + new Vector2(0.5f), max - new Vector2(0.5f),
-                SimplePalette.ToU32(tint), 12f, ImDrawFlags.RoundCornersAll);
-        drawList.AddRect(pos + new Vector2(1f), max - new Vector2(1f),
-            SimplePalette.ToU32(SimplePalette.Border), 11f, ImDrawFlags.RoundCornersAll, 1f);
+                Nag0miUICommonSettings.Instance.Qt面板背景, pos, ImGui.GetWindowSize(), 4f))
+            ShuimoDraw.DrawPaper(drawList, pos, max, 0.85f);
+        drawList.PopClipRect();
+
+        drawList.PushClipRectFullScreen();
+        ShuimoDraw.DrawBrushFrame(drawList, pos, max, 7f);
         drawList.PopClipRect();
     }
 

@@ -9,10 +9,15 @@ namespace Nag0mi.Common.UI;
 // 仅由 SettingRow 分发调用，内容代码不直接使用本类。
 public static class SidebarSettingRow
 {
-    // 分节标题：主题色圆点 + 加粗文字 + 右侧细线。
+    // 分节标题：主题色圆点 + 书法字体标题 + 右侧细线。
     public static void SectionTitle(string title)
     {
         ImGui.Spacing();
+
+        // 分节标题属标题位, 用书法字体（未就绪时回落默认字体）
+        var titleFont = ShuimoFont.Title;
+        var fontPop = titleFont is { Available: true } ? titleFont.Push() : null;
+
         var drawList = ImGui.GetWindowDrawList();
         var pos = ImGui.GetCursorScreenPos();
         var textSize = ImGui.CalcTextSize(title);
@@ -31,6 +36,7 @@ public static class SidebarSettingRow
         var lineEnd = new Vector2(pos.X + ImGui.GetContentRegionAvail().X, lineY);
         drawList.AddLine(lineStart, lineEnd, SimplePalette.ToU32(SimplePalette.Border), 1f);
 
+        fontPop?.Dispose();
         ImGui.Spacing();
     }
 

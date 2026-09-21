@@ -1,68 +1,68 @@
-// Portions Copyright (c) Eros001377, MIT License. Ported from ErosUI.
+// Portions Copyright (c) shuimo-design, MIT License.
 using System.Numerics;
 
 namespace Nag0mi.Common.UI;
 
-// 框架窗口配色：只保留 ErosUI 的 Dark（深底浅字）一套，主题切换与主色自定义已剔除。
-// 只用于窗口全局样式 Push/Pop 与面板自绘取色。
+// 框架窗口配色转发层：全部色值改指 ShuimoPalette（水墨色板, 明/暗随 DarkMode 切换），
+// 现有调用点（状态色、模式色、QT 状态色、窗口全局样式 Push/Pop）签名不变。
 public static class SimplePalette
 {
-    // 主色调
-    public static readonly Vector4 Primary = new(0.686f, 0.318f, 0.914f, 1f);       // #AF51E9
-    public static readonly Vector4 PrimaryHover = new(0.749f, 0.454f, 0.931f, 1f);  // #BF74ED（提亮一档）
-    public static readonly Vector4 PrimaryActive = new(0.604f, 0.280f, 0.804f, 1f); // #9A47CD（加深一档）
+    // 主色调（血红）
+    public static Vector4 Primary => ShuimoPalette.Main;                  // #861717
+    public static Vector4 PrimaryHover => ShuimoPalette.Hover;            // #1661AB 靛蓝
+    public static Vector4 PrimaryActive => ShuimoPalette.MainPressed;     // #6A1212（加深一档）
 
     // 强调色：勾选、滑条 grab、导航激活
-    public static Vector4 Accent => Primary;
+    public static Vector4 Accent => ShuimoPalette.Main;
 
-    // 高难模式文字（亮橙）
-    public static readonly Vector4 ModeHighEndText = new(1f, 0.80f, 0.20f, 1f);
+    // 高难模式文字（血红）
+    public static Vector4 ModeHighEndText => ShuimoPalette.Off;
 
-    // 日随模式文字（亮绿）
-    public static readonly Vector4 ModeDailyText = new(0.20f, 1f, 0.40f, 1f);
+    // 日随模式文字（青）
+    public static Vector4 ModeDailyText => ShuimoPalette.Running;
 
-    // 自定义模式黄（控制条模式键）
-    public static readonly Vector4 ModeCustom = new(0.98f, 0.84f, 0.28f, 1f);
+    // 自定义模式（靛蓝, 控制条模式键）
+    public static Vector4 ModeCustom => ShuimoPalette.Custom;
 
     // 文字
-    public static readonly Vector4 TextPrimary = new(0.95f, 0.95f, 0.95f, 1f);
-    public static readonly Vector4 TextSecondary = new(0.70f, 0.70f, 0.70f, 1f);
-    public static readonly Vector4 TextDisabled = new(0.35f, 0.35f, 0.35f, 1f);
+    public static Vector4 TextPrimary => ShuimoPalette.Text;
+    public static Vector4 TextSecondary => ShuimoPalette.TextSecondary;
+    public static Vector4 TextDisabled => ShuimoPalette.TextDisabled;
 
-    public static readonly Vector4 FrameBg = new(0.10f, 0.10f, 0.10f, 0.50f);
-    public static readonly Vector4 FrameBgHovered = new(0.15f, 0.15f, 0.15f, 0.60f);
-    public static readonly Vector4 FrameBgActive = new(0.20f, 0.20f, 0.20f, 0.70f);
+    public static Vector4 FrameBg => ShuimoPalette.FrameBg;
+    public static Vector4 FrameBgHovered => ShuimoPalette.FrameBgHovered;
+    public static Vector4 FrameBgActive => ShuimoPalette.FrameBgActive;
 
     // 弹窗底（Combo 下拉/右键菜单; 近实底保可读性）
-    public static readonly Vector4 PopupBg = new(0.06f, 0.06f, 0.06f, 0.98f);
+    public static Vector4 PopupBg => ShuimoPalette.PopupBg;
 
     // 边框与分隔
-    public static readonly Vector4 Border = new(1f, 1f, 1f, 0.10f);
-    public static readonly Vector4 BorderStrong = new(1f, 1f, 1f, 0.20f);
+    public static Vector4 Border => ShuimoPalette.Border;
+    public static Vector4 BorderStrong => ShuimoPalette.BorderStrong;
 
-    // 侧边栏导航激活项
-    public static readonly Vector4 NavActiveBg = new(Primary.X, Primary.Y, Primary.Z, 0.18f);
-    public static readonly Vector4 NavActiveText = new(0.95f, 0.95f, 0.95f, 1f);
+    // 侧边栏导航激活项（血红淡染底 + 血红字; 侧边栏另画左侧血红竖条）
+    public static Vector4 NavActiveBg => ShuimoPalette.WithAlpha(ShuimoPalette.Main, 0.18f);
+    public static Vector4 NavActiveText => ShuimoPalette.Main;
 
     // 运行状态色（战斗控制窗口）
-    public static readonly Vector4 StateRunning = new(0.30f, 0.85f, 0.45f, 1f);   // 绿
-    public static readonly Vector4 StateHold = new(0.96f, 0.62f, 0.20f, 1f);       // 橙
-    public static readonly Vector4 StateOff = new(0.92f, 0.30f, 0.32f, 1f);        // 红
+    public static Vector4 StateRunning => ShuimoPalette.Running;   // 青 #4A9992
+    public static Vector4 StateHold => ShuimoPalette.Hold;         // 藤黄 #E8B004
+    public static Vector4 StateOff => ShuimoPalette.Off;           // 血红 #861717
 
     // QT 瓦片状态色
-    public static readonly Vector4 QtOnBorder = new(0.30f, 0.85f, 0.45f, 1f);        // 启用：绿色描边
-    public static readonly Vector4 QtOnGlow = new(0.30f, 0.85f, 0.45f, 0.90f);       // 启用：底部微光条
-    public static readonly Vector4 QtOffBorder = new(0.92f, 0.30f, 0.32f, 1f);       // 关闭：红色描边
-    public static readonly Vector4 QtOffVeil = new(0.08f, 0.08f, 0.10f, 0.38f);      // 关闭：深灰罩层（半透明）
+    public static Vector4 QtOnBorder => ShuimoPalette.Running;                                // 启用：青色描边
+    public static Vector4 QtOnGlow => ShuimoPalette.WithAlpha(ShuimoPalette.Running, 0.90f);  // 启用：底部微光条
+    public static Vector4 QtOffBorder => ShuimoPalette.Off;                                   // 关闭：血红描边
+    public static Vector4 QtOffVeil => new(0.10f, 0.10f, 0.10f, 0.35f);                       // 关闭：墨色罩层（半透明）
 
-    // 控制条「模式」键取色：按模式名关键词映射（高难=红 / 日随=绿 / 自定义=黄），未识别回落主色。
+    // 控制条「模式」键取色：按模式名关键词映射（高难=血红 / 日随=青 / 自定义=靛蓝），未识别回落主色。
     public static Vector4 ModeButtonColor(string? modeName)
     {
-        if (modeName == null) return PrimaryHover;
-        if (modeName.Contains("高难")) return StateOff;
-        if (modeName.Contains("日随")) return StateRunning;
-        if (modeName.Contains("自定义")) return ModeCustom;
-        return PrimaryHover;
+        if (modeName == null) return ShuimoPalette.Main;
+        if (modeName.Contains("高难")) return ShuimoPalette.Off;
+        if (modeName.Contains("日随")) return ShuimoPalette.Running;
+        if (modeName.Contains("自定义")) return ShuimoPalette.Custom;
+        return ShuimoPalette.Main;
     }
 
     public static uint ToU32(Vector4 c)

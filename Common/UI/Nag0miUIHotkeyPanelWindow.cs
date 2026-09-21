@@ -2,7 +2,6 @@
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Textures;
-using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Interface.Windowing;
 using ECommons.DalamudServices;
 using Nag0mi.Common.Data;
@@ -16,11 +15,11 @@ using FcsActionManager = FFXIVClientStructs.FFXIV.Client.Game.ActionManager;
 
 namespace Nag0mi.Common.UI;
 
-// Nag0miUI 风格热键面板：窗口外壳（NoBackground + 窗口自身绘制列表圆角底 +
+// Nag0miUI 风格热键面板：窗口外壳（NoBackground + 窗口自身绘制列表宣纸底 +
 // 每帧按网格精确尺寸），图标/冷却/充能/队列待发用宿主公开件渲染
 // （IHotkey/ActionHotkey/DelegateHotkey + IconHelper/ActionHelper/HotkeyQueueManager）;
-// 冷却/充能进度为圆圈进度条 + 居中秒数, 充能数/目标角标/激活金框用 UI\ 贴图
-// （Charge0-3 / Num2-8 / 062xxx / activeaction, 位于宿主配置目录\ACR\作者\UI\, 缺失退化文字）。
+// 冷却/充能进度为圆圈进度条 + 居中秒数, 充能数/目标角标/激活金框用内置贴图
+// （Charge0-3 / Num2-8 / 062xxx / activeaction, 位于宿主配置目录\ACR\作者\UI\, 经 ShuimoDraw 取）。
 // 右键按住实时交换排序（SwapOrderHelper）, 松手写回 Nag0miUISettings.HotkeyOrder 并落盘;
 // 左键按住窗口内任意位置（格子或缝隙）拖动整个面板——格子上的点击与拖动按位移阈值区分,
 // 超阈值转拖动后松手不触发热键, 位置落盘。
@@ -85,7 +84,7 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
     {
         ImGui.PushStyleColor(ImGuiCol.Text, SimplePalette.TextPrimary);
         ImGui.PushStyleColor(ImGuiCol.Border, SimplePalette.Border);
-        ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, 12f);
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, 4f);
         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(14f, 12f));
         base.PreDraw();
     }
@@ -258,12 +257,12 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
 
         if (hk.ActionId != 0 && HotkeyQueueManager.IsPending(hk.ActionId))
         {
-            // 队列待发：强调色呼吸罩 + 加粗描边
+            // 队列待发：强调色呼吸罩 + 笔触描边
             var pulse = 0.72f + 0.18f * MathF.Sin((float)ImGui.GetTime() * 5.5f);
             drawList.AddRectFilled(min, max,
                 SimplePalette.ToU32(SimplePalette.WithAlpha(accent, 0.10f * pulse)), 圆角);
-            drawList.AddRect(min, max,
-                SimplePalette.ToU32(SimplePalette.WithAlpha(accent, 0.9f)), 圆角, ImDrawFlags.RoundCornersAll, 2.2f);
+            ShuimoDraw.DrawBrushStateFrame(drawList, min, max,
+                SimplePalette.WithAlpha(accent, 0.9f), 4.5f);
         }
         else if (hk.ActionId != 0)
         {
@@ -274,16 +273,15 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
         if (目标角标表.TryGetValue(name, out var 角标目标))
             DrawTargetBadge(drawList, 角标目标, min, max);
 
-        // 描边：平时 BorderStrong（20%），悬停提亮到主文字色 40%
-        drawList.AddRect(min, max,
-            SimplePalette.ToU32(hovered ? SimplePalette.WithAlpha(SimplePalette.TextPrimary, 0.40f)
-                                        : SimplePalette.BorderStrong),
-            圆角, ImDrawFlags.RoundCornersAll, 1.2f);
+        // 描边：平时 BorderStrong, 悬停提亮到主文字色 40%（笔触边框染色承载）
+        ShuimoDraw.DrawBrushStateFrame(drawList, min, max,
+            hovered ? SimplePalette.WithAlpha(SimplePalette.TextPrimary, 0.40f)
+                    : SimplePalette.BorderStrong, 4f);
 
         // 已释放且 buff 未结束：activeaction 金框盖在最上层
         if (hk.ActionId != 0 && 技能激活中(hk.ActionId))
         {
-            var activeTex = 取贴图("activeaction.png");
+            var activeTex = ShuimoDraw.Tex("activeaction.png");
             if (activeTex != null)
                 drawList.AddImage(activeTex.Handle, min - new Vector2(1.5f), max + new Vector2(1.5f));
         }
@@ -306,76 +304,11 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
         return false;
     }
 
-    // 面板贴图目录：ACR 程序集由宿主按字节流加载（Assembly.Location 为空）,
-    // 目录约定为 宿主配置目录\ACR\作者\UI\（与安装包布局一致, csproj 输出目录同构）;
-    // Assembly.Location 非空时兜底（开发直跑）。只缓存命中, 未找到时下帧重试。
-    private static string? 贴图目录;
-    private static bool 贴图目录警告过;
-
-    private static string? 取贴图目录()
-    {
-        if (贴图目录 != null) return 贴图目录;
-        var candidates = new List<string?>(2)
-        {
-            Svc.PluginInterface.ConfigDirectory?.FullName is { } cfg
-                ? Path.Combine(cfg, "ACR", Nag0miUIJobEnv.作者, "UI")
-                : null,
-            Path.GetDirectoryName(typeof(Nag0miUIHotkeyPanelWindow).Assembly.Location) is { Length: > 0 } asm
-                ? Path.Combine(asm, "UI")
-                : null,
-        };
-        foreach (var dir in candidates)
-            if (dir != null && Directory.Exists(dir)) { 贴图目录 = dir; return dir; }
-        if (!贴图目录警告过)
-        {
-            贴图目录警告过 = true;
-            Svc.Log.Warning($"[{Nag0miUIJobEnv.作者}] 热键面板贴图目录未找到（尝试过: {string.Join(" | ", candidates)}）");
-        }
-        return null;
-    }
-
-    // 贴图缓存持有 ISharedImmediateTexture 共享句柄（保活底层纹理）, 绘制帧才取 wrap。
-    // 直接缓存 wrap 不行：句柄被 GC 回收后底层纹理销毁, 缓存的 wrap 变成已销毁对象,
-    // 再访问 Handle 抛 ObjectDisposedException; 异步就绪前 GetWrapOrDefault 返回 null, 下帧重试。
-    private static readonly Dictionary<string, ISharedImmediateTexture> 贴图缓存 = new(StringComparer.OrdinalIgnoreCase);
-    private static readonly HashSet<string> 贴图失败 = new(StringComparer.OrdinalIgnoreCase);
-    private static readonly HashSet<string> 贴图警告过 = new(StringComparer.OrdinalIgnoreCase);
-
-    private static IDalamudTextureWrap? 取贴图(string fileName)
-    {
-        if (贴图失败.Contains(fileName)) return null;
-        if (!贴图缓存.TryGetValue(fileName, out var tex))
-        {
-            var dir = 取贴图目录();
-            if (dir == null) return null;
-            var path = Path.Combine(dir, fileName);
-            if (!File.Exists(path))
-            {
-                if (贴图警告过.Add(fileName))
-                    Svc.Log.Warning($"[{Nag0miUIJobEnv.作者}] 贴图缺失: {path}");
-                return null;
-            }
-            try
-            {
-                tex = Svc.Texture.GetFromFile(path);
-            }
-            catch (Exception e)
-            {
-                贴图失败.Add(fileName);
-                if (贴图警告过.Add(fileName))
-                    Svc.Log.Warning($"[{Nag0miUIJobEnv.作者}] 贴图加载失败 {fileName}: {e.Message}");
-                return null;
-            }
-            贴图缓存[fileName] = tex;
-        }
-        return tex.GetWrapOrDefault(null);
-    }
-
     // 冷却/充能进度：整格压暗遮罩 + 圆圈进度条（顶部起, 弧长 = 剩余比例, 随时间顺时针消减）
     // + 左下角秒数。
     // 充能技能的总冷却是「攒满全部充能」的时长（极光清空两层=120s）, 进度与秒数折算成
     // 「下一层充能」的剩余显示, 与游戏内原生表现一致; 充能数角标常驻右下角（Charge0-3.png）,
-    // 最后绘制不被进度环盖住, 贴图缺失退化回文字角标。
+    // 最后绘制不被进度环盖住（内置贴图经 ShuimoDraw 取, 未就绪帧跳过）。
     private static void DrawCooldown(ImDrawListPtr drawList, IHotkey hk, Vector2 min, Vector2 max)
     {
         var cd = ActionHelper.GetActionCooldown(hk.ActionId);
@@ -425,23 +358,12 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
         if (maxCharges > 1)
         {
             var n = Math.Clamp((int)MathF.Floor(charges + 0.001f), 0, maxCharges);
-            var tex = 取贴图($"Charge{Math.Min(n, 3)}.png");
+            var tex = ShuimoDraw.Tex($"Charge{Math.Min(n, 3)}.png");
             if (tex != null)
             {
-                
                 var size = (max - min) * 0.45f;
                 drawList.AddImage(tex.Handle, max - size - new Vector2(2f, 1f),
                     max - new Vector2(2f, 1f));
-            }
-            else
-            {
-                var nText = n.ToString();
-                var nts = ImGui.CalcTextSize(nText);
-                var ntp = max - nts - new Vector2(5f, 3f);
-                drawList.AddRectFilled(ntp - new Vector2(4f, 1f), max - new Vector2(1f),
-                    SimplePalette.ToU32(new Vector4(0.1f, 0.1f, 0.1f, 0.85f)), 5f);
-                drawList.AddText(ImGui.GetFont(), ImGui.GetFontSize(), ntp,
-                    SimplePalette.ToU32(SimplePalette.TextPrimary), nText);
             }
         }
     }
@@ -459,29 +381,21 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
         return Math.Max(1, ActionHelper.GetMaxCharges(actionId));
     }
 
-    // 目标角标配色（自定义热键）
-    private static readonly Vector4 角标蓝 = new(0.30f, 0.55f, 1.00f, 1f);   // 小队数字 / 坦克
-    private static readonly Vector4 角标绿 = new(0.30f, 0.85f, 0.45f, 1f);   // 治疗
-    private static readonly Vector4 角标红 = new(0.92f, 0.30f, 0.32f, 1f);   // 输出
-    private static readonly Vector4 角标黄 = new(1.00f, 0.85f, 0.25f, 1f);   // 不限定职业
-
-    // 数字/职能角标贴图：左上角, 边长 ≈ 格子边长的 1/√3（面积约 1/3）, 
+    // 数字/职能角标贴图：左上角, 边长 ≈ 格子边长的 1/√3（面积约 1/3）,
     private const float 角标边长比 = 0.577f;
-    private const uint 角标着色 = 0xFFFFFFFFu; // ImGui 0xAABBGGRR, 
+    private const uint 角标着色 = 0xFFFFFFFFu; // ImGui 0xAABBGGRR,
 
     // 自定义热键的目标角标：小队成员2-8 → 左上角 Num2-8.png 数字贴图;
     // 血量最低的队友/坦克/奶妈/输出 → 左上角对应职能贴图（062144/062581/062582/062583）。
-    // 贴图缺失退化回文字角标（数字 / HP LOW, 带黑影保可读）。
+    // 内置贴图经 ShuimoDraw 取, 未就绪帧跳过。
     private static void DrawTargetBadge(ImDrawListPtr drawList, CustomHotkeyTarget target, Vector2 min, Vector2 max)
     {
-        const float fontScale = 0.72f;
-        var fontSize = ImGui.GetFontSize() * fontScale;
         var tileH = max.Y - min.Y;
 
         if (target >= CustomHotkeyTarget.Party2)
         {
             var num = (int)target - (int)CustomHotkeyTarget.Party2 + 2;
-            var tex = 取贴图($"Num{num}.png");
+            var tex = ShuimoDraw.Tex($"Num{num}.png");
             if (tex != null)
             {
                 var h = tileH * 角标边长比;
@@ -489,13 +403,7 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
                 var pos = min + new Vector2(2f, 1f);
                 drawList.AddImage(tex.Handle, pos, pos + new Vector2(w, h),
                     Vector2.Zero, Vector2.One, 角标着色);
-                return;
             }
-
-            var numText = num.ToString();
-            var textPos = min + new Vector2(3f, 1f);
-            drawList.AddText(ImGui.GetFont(), fontSize, textPos + new Vector2(1f, 1f), 4278190080u, numText);
-            drawList.AddText(ImGui.GetFont(), fontSize, textPos, SimplePalette.ToU32(角标蓝), numText);
             return;
         }
 
@@ -509,28 +417,14 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
         };
         if (iconFile == null) return;
 
-        var icon = 取贴图(iconFile);
+        var icon = ShuimoDraw.Tex(iconFile);
         if (icon != null)
         {
             var size = tileH * 角标边长比;
             var pos = min + Vector2.One;
             drawList.AddImage(icon.Handle, pos, pos + new Vector2(size),
                 Vector2.Zero, Vector2.One, 角标着色);
-            return;
         }
-
-        var color = target switch
-        {
-            CustomHotkeyTarget.LowestHpTank => 角标蓝,
-            CustomHotkeyTarget.LowestHpHealer => 角标绿,
-            CustomHotkeyTarget.LowestHpDps => 角标红,
-            _ => 角标黄,
-        };
-        const string text = "HP LOW";
-        var ts = ImGui.CalcTextSize(text) * fontScale;
-        var tp = new Vector2((min.X + max.X - ts.X) * 0.5f, min.Y + 1f);
-        drawList.AddText(ImGui.GetFont(), fontSize, tp + new Vector2(1f, 1f), 4278190080u, text);
-        drawList.AddText(ImGui.GetFont(), fontSize, tp, SimplePalette.ToU32(color), text);
     }
 
     // ============================================================
@@ -595,6 +489,7 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
     // ============================================================
     // 面板底色与边框：画进窗口自身的绘制列表（先垫占位命令，见 Nag0miUILayer），
     // 保证两个窗口重叠时背景仍然盖住身后窗口的内容。
+    // 水墨底 = 宣纸平铺（透明度沿用面板惯例 0.85）+ 笔触边框；热键面板不铺山水（瓦片太小只剩噪点）。
     private void DrawWindowChrome()
     {
         var pos = ImGui.GetWindowPos();
@@ -604,15 +499,14 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
         // 覆盖 Begin 压入的内容区内层裁剪, 底色/边框画满全窗口（本窗无标题栏）
         drawList.PushClipRect(pos, max, false);
 
-        var tint = new Vector4(0.11f, 0.11f, 0.12f, 0.85f);
-
-        // 自定义背景图（设置页「个性化」配置）优先于默认底色
+        // 自定义背景图（设置页「个性化」配置）优先于默认宣纸底
         if (!WindowBackgroundManager.DrawBackgroundImage(drawList,
-                Nag0miUICommonSettings.Instance.热键面板背景, pos, ImGui.GetWindowSize(), 12f))
-            drawList.AddRectFilled(pos + new Vector2(0.5f), max - new Vector2(0.5f),
-                SimplePalette.ToU32(tint), 12f, ImDrawFlags.RoundCornersAll);
-        drawList.AddRect(pos + new Vector2(1f), max - new Vector2(1f),
-            SimplePalette.ToU32(SimplePalette.Border), 11f, ImDrawFlags.RoundCornersAll, 1f);
+                Nag0miUICommonSettings.Instance.热键面板背景, pos, ImGui.GetWindowSize(), 4f))
+            ShuimoDraw.DrawPaper(drawList, pos, max, 0.85f);
+        drawList.PopClipRect();
+
+        drawList.PushClipRectFullScreen();
+        ShuimoDraw.DrawBrushFrame(drawList, pos, max, 7f);
         drawList.PopClipRect();
     }
 

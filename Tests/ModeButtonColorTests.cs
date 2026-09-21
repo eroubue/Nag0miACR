@@ -7,29 +7,29 @@ internal static class ModeButtonColorTests
     public static void Run()
     {
         MapsHighEndToRed();
-        MapsDailyToGreen();
-        MapsCustomToYellow();
-        UnknownNamesFallBackToPrimary();
+        MapsDailyToCyan();
+        MapsCustomToIndigo();
+        UnknownNamesFallBackToMain();
     }
 
     private static void MapsHighEndToRed()
     {
-        Check.Equal(SimplePalette.StateOff, SimplePalette.ModeButtonColor("高难"));
+        Check.Equal(ShuimoPalette.Hex(0x861717), SimplePalette.ModeButtonColor("高难"));
     }
 
-    private static void MapsDailyToGreen()
+    private static void MapsDailyToCyan()
     {
-        Check.Equal(SimplePalette.StateRunning, SimplePalette.ModeButtonColor("日随"));
+        Check.Equal(ShuimoPalette.Hex(0x4A9992), SimplePalette.ModeButtonColor("日随"));
     }
 
-    private static void MapsCustomToYellow()
+    private static void MapsCustomToIndigo()
     {
-        Check.Equal(SimplePalette.ModeCustom, SimplePalette.ModeButtonColor("自定义"));
+        Check.Equal(ShuimoPalette.Hex(0x1661AB), SimplePalette.ModeButtonColor("自定义"));
     }
 
-    private static void UnknownNamesFallBackToPrimary()
+    private static void UnknownNamesFallBackToMain()
     {
-        Check.Equal(SimplePalette.PrimaryHover, SimplePalette.ModeButtonColor("模式7"));
-        Check.Equal(SimplePalette.PrimaryHover, SimplePalette.ModeButtonColor(null));
+        Check.Equal(ShuimoPalette.Main, SimplePalette.ModeButtonColor("模式7"));
+        Check.Equal(ShuimoPalette.Main, SimplePalette.ModeButtonColor(null));
     }
 }
