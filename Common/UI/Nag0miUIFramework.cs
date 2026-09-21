@@ -88,6 +88,8 @@ public static class Nag0miUIFramework
     {
         Active = false;
         Nag0miUIHotkeyUI.Uninstall();
+        WindowFontManager.Dispose();        // 自定义字体句柄缓存
+        WindowBackgroundManager.Dispose();  // 背景图纹理缓存
         if (windows != null)
         {
             try { windows.Dispose(); } catch { /* 宿主可能已改动窗口注册 */ }

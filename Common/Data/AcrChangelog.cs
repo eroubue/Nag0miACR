@@ -4,7 +4,7 @@ namespace Nag0mi.Common.Data;
 // 并在此处追加对应条目（日期 / 版本 / 内容）。Version 与清单文件中的 version 保持一致。
 public static class AcrChangelog
 {
-    public const string Version = "1.3";
+    public const string Version = "1.4";
 
     public enum LineKind { Add, Remove, Note }
 
@@ -13,6 +13,11 @@ public static class AcrChangelog
 
     public static readonly Entry[] Entries =
     [
+        new("2026-09-21", "1.4",
+        [
+            new(LineKind.Add, "设置窗口新增「个性化」页：设置窗口/QT面板/热键面板可分别启用自定义字体（系统/游戏/字体文件）与自定义背景图（含透明度）"),
+            new(LineKind.Add, "基础设置页新增锁定 QT 面板位置与锁定热键面板位置开关（防战斗误移）"),
+        ]),
         new("2026-09-21", "1.3",
         [
             new(LineKind.Note, "冷却计时秒数移到格子左下角"),

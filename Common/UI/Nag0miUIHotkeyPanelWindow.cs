@@ -98,6 +98,10 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
     }
 
     public override void Draw()
+        // 自定义字体（设置页「个性化」配置; 未启用/加载失败时用宿主默认字体）
+        => WindowFontManager.DrawWithCustomFont(Nag0miUICommonSettings.Instance.热键面板字体, "热键面板", DrawContent);
+
+    private void DrawContent()
     {
         var pad = ImGui.GetStyle().WindowPadding;
         var cols = Math.Min(columns, entries.Count);
@@ -602,8 +606,11 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
 
         var tint = new Vector4(0.11f, 0.11f, 0.12f, 0.85f);
 
-        drawList.AddRectFilled(pos + new Vector2(0.5f), max - new Vector2(0.5f),
-            SimplePalette.ToU32(tint), 12f, ImDrawFlags.RoundCornersAll);
+        // 自定义背景图（设置页「个性化」配置）优先于默认底色
+        if (!WindowBackgroundManager.DrawBackgroundImage(drawList,
+                Nag0miUICommonSettings.Instance.热键面板背景, pos, ImGui.GetWindowSize(), 12f))
+            drawList.AddRectFilled(pos + new Vector2(0.5f), max - new Vector2(0.5f),
+                SimplePalette.ToU32(tint), 12f, ImDrawFlags.RoundCornersAll);
         drawList.AddRect(pos + new Vector2(1f), max - new Vector2(1f),
             SimplePalette.ToU32(SimplePalette.Border), 11f, ImDrawFlags.RoundCornersAll, 1f);
         drawList.PopClipRect();
@@ -616,6 +623,14 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
     // 重置按压标志，时序不会错。
     private void HandleWindowDrag()
     {
+        // 位置锁定（设置页勾选）: 不起拖也不残留按压状态, 点击执行不受影响
+        if (Nag0miUISettings.Instance.热键面板位置锁定)
+        {
+            左键按压在本窗 = false;
+            按压已转拖动 = false;
+            return;
+        }
+
         // AllowWhenBlockedByActiveItem：按住格子（按钮占住 ActiveId）时悬停判定仍为真
         var hovered = ImGui.IsWindowHovered(ImGuiHoveredFlags.AllowWhenBlockedByActiveItem);
         if (hovered && ImGui.IsMouseClicked(ImGuiMouseButton.Left))

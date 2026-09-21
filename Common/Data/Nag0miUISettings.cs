@@ -70,6 +70,9 @@ public class Nag0miUISettings
     // 热键悬浮面板位置（左键拖动缝隙落盘; null = 首次居中）
     public System.Numerics.Vector2? 热键面板位置;
 
+    // 锁定热键面板位置: 开启后热键悬浮面板不可左键拖动（防战斗误移）
+    public bool 热键面板位置锁定 = false;
+
     // 自定义热键（设置页 Hotkey 页管理：技能+目标 组合; 显示名唯一, 参与排序与显隐）
     public List<CustomHotkeyEntry> CustomHotkeys = new();
 
@@ -96,6 +99,9 @@ public class Nag0miUISettings
 
     // QT 悬浮面板位置（左键拖动缝隙落盘; null = 首次居中）
     public System.Numerics.Vector2? Qt面板位置;
+
+    // 锁定 QT 面板位置: 开启后 QT 悬浮面板不可左键拖动（防战斗误移）
+    public bool Qt面板位置锁定 = false;
 
     // ============================================================
     // === QT 面板按钮显隐（按模式索引各存一套；键=QT名; 缺省=显示。只控制显隐, 不影响开关状态） ===

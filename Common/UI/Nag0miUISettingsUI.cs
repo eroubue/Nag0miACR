@@ -74,14 +74,52 @@ public static class Nag0miUISettingsUI
             Nag0miUIFramework.SetPanelsVisible(!panelsVisible);
     }
 
+    // 面板位置锁定：开启后对应悬浮面板不可左键拖动（防战斗误移）; 点击开关/排序不受影响
+    private static void DrawPanelPositionLocks()
+    {
+        var s = Nag0miUISettings.Instance;
+
+        var qtLocked = s.Qt面板位置锁定;
+        if (SettingRow.Checkbox("锁定QT面板位置", ref qtLocked, "开启后 QT 悬浮面板不可左键拖动换位（防战斗误移）"))
+        {
+            s.Qt面板位置锁定 = qtLocked;
+            s.Save();
+        }
+
+        var hotkeyLocked = s.热键面板位置锁定;
+        if (SettingRow.Checkbox("锁定热键面板位置", ref hotkeyLocked, "开启后热键悬浮面板不可左键拖动换位（防战斗误移）"))
+        {
+            s.热键面板位置锁定 = hotkeyLocked;
+            s.Save();
+        }
+    }
+
     // ============================================================
     public static void DrawGeneral()
     {
         Hdr("面板控制");
         DrawPanelsVisibilityButton();
+        DrawPanelPositionLocks();
 
         Hdr("基础设置");
         DrawModeSwitchRow();
+    }
+
+    // ============================================================
+    // === 个性化页：逐窗口字体 / 背景图（全职业共用, 存 Common.json） ===
+    // ============================================================
+    public static void DrawPersonalization()
+    {
+        var c = Nag0miUICommonSettings.Instance;
+        void Save() => c.Save();
+
+        Hdr("窗口字体");
+        WindowFontSettingsUI.DrawAllWindowFontSettings(
+            c.设置窗口字体, c.Qt面板字体, c.热键面板字体, Save);
+
+        Hdr("窗口背景");
+        WindowBackgroundSettingsUI.DrawAllWindowBackgroundSettings(
+            c.设置窗口背景, c.Qt面板背景, c.热键面板背景, Save);
     }
 
     // ============================================================

@@ -2,6 +2,7 @@
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
+using Nag0mi.Common.Data;
 
 namespace Nag0mi.Common.UI;
 
@@ -98,10 +99,14 @@ public abstract partial class SettingsWindowBase : Window
     }
 
     public override void Draw()
+        // 自定义字体（设置页「个性化」配置; 未启用/加载失败时用宿主默认字体）
+        => WindowFontManager.DrawWithCustomFont(Nag0miUICommonSettings.Instance.设置窗口字体, "设置窗口", DrawContentSafe);
+
+    private void DrawContentSafe()
     {
         try
         {
-            // 纯色半透明背景
+            // 自定义背景图优先, 未启用/加载失败时画纯色半透明背景
             DrawWindowBackground();
 
             DrawSidebarLayout();
@@ -196,7 +201,10 @@ public abstract partial class SettingsWindowBase : Window
         // 不覆盖会把底色四条边各裁掉一条; 标题栏区不铺底色, 保持原生标题栏可读
         drawList.PushClipRect(new Vector2(ImGui.GetWindowPos().X, ImGui.GetWindowPos().Y + ImGui.GetFrameHeight()),
             ImGui.GetWindowPos() + ImGui.GetWindowSize(), false);
-        drawList.AddRectFilled(min, max, SimplePalette.ToU32(BackgroundTint), rounding, ImDrawFlags.RoundCornersAll);
+        // 自定义背景图（设置页「个性化」配置）优先于默认底色
+        if (!WindowBackgroundManager.DrawBackgroundImage(drawList,
+                Nag0miUICommonSettings.Instance.设置窗口背景, min, ImGui.GetWindowSize() - new Vector2(1f), rounding))
+            drawList.AddRectFilled(min, max, SimplePalette.ToU32(BackgroundTint), rounding, ImDrawFlags.RoundCornersAll);
         drawList.PopClipRect();
     }
 

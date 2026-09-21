@@ -17,6 +17,17 @@ public class Nag0miUICommonSettings
     // ============================================================
     public Dictionary<string, WindowLayoutData> WindowLayouts = new();
 
+    // ============================================================
+    // === 窗口个性化（字体 / 背景图, 全职业共用; 绘制逻辑在 Common/UI 的两个 Manager） ===
+    // ============================================================
+    public WindowFontSettings 设置窗口字体 = new();
+    public WindowFontSettings Qt面板字体 = new();
+    public WindowFontSettings 热键面板字体 = new();
+
+    public WindowBackgroundSettings 设置窗口背景 = new();
+    public WindowBackgroundSettings Qt面板背景 = new();
+    public WindowBackgroundSettings 热键面板背景 = new();
+
     // 单个窗口的持久化布局（JSON 可序列化；运行期状态在 SettingsWindowBase.WindowLayoutState）
     public sealed class WindowLayoutData
     {

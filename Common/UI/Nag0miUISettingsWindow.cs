@@ -61,12 +61,13 @@ public sealed class Nag0miUISettingsWindow : SettingsWindowBase
             if (tabsCache == null || !ReferenceEquals(extra, tabsCacheSource))
             {
                 tabsCacheSource = extra;
-                tabsCache = new string[3 + extra.Length];
+                tabsCache = new string[4 + extra.Length];
                 tabsCache[0] = "基础设置";
                 tabsCache[1] = "Hotkey";
                 tabsCache[2] = "QT面板";
+                tabsCache[3] = "个性化";
                 for (var i = 0; i < extra.Length; i++)
-                    tabsCache[3 + i] = extra[i].label;
+                    tabsCache[4 + i] = extra[i].label;
             }
             return tabsCache;
         }
@@ -81,9 +82,10 @@ public sealed class Nag0miUISettingsWindow : SettingsWindowBase
             case 0: Nag0miUISettingsUI.DrawGeneral(); break;
             case 1: Nag0miUISettingsUI.DrawHotkey(); break;
             case 2: Nag0miUISettingsUI.DrawQtPanel(); break;
+            case 3: Nag0miUISettingsUI.DrawPersonalization(); break;
             default:
                 var extra = Nag0miUIJobEnv.ExtraTabs;
-                var i = tabIndex - 3;
+                var i = tabIndex - 4;
                 if (i >= 0 && i < extra.Length) extra[i].draw();
                 break;
         }
