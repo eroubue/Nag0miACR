@@ -367,7 +367,8 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
         return tex.GetWrapOrDefault(null);
     }
 
-    // 冷却/充能进度：圆圈进度条（顶部起顺时针, 弧长 = 剩余比例, 随时间消减）+ 居中秒数。
+    // 冷却/充能进度：整格压暗遮罩 + 圆圈进度条（顶部起, 弧长 = 剩余比例, 随时间顺时针消减）
+    // + 左下角秒数。
     // 充能技能的总冷却是「攒满全部充能」的时长（极光清空两层=120s）, 进度与秒数折算成
     // 「下一层充能」的剩余显示, 与游戏内原生表现一致; 充能数角标常驻右下角（Charge0-3.png）,
     // 最后绘制不被进度环盖住, 贴图缺失退化回文字角标。
@@ -379,6 +380,9 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
 
         if (cd > 0f && ActionHelper.IsActionRecharging(cd, charges, maxCharges))
         {
+            // 冷却中整格压暗, 让倒计时状态一眼可辨
+            drawList.AddRectFilled(min, max, SimplePalette.ToU32(new Vector4(0f, 0f, 0f, 0.45f)), 圆角);
+
             var recast = ActionHelper.GetActionRecastTime(hk.ActionId);
             if (recast > 0.001f)
             {
@@ -393,8 +397,10 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
                 const float 线宽 = 3f;
                 drawList.AddCircle(center, radius,
                     SimplePalette.ToU32(new Vector4(0.1f, 0.1f, 0.1f, 0.55f)), 0, 线宽);
+                // 弧尾固定在顶部, 弧头随剩余时间从顶部顺时针回扫（与原生热键栏一致）
                 var a0 = -MathF.PI * 0.5f;
-                drawList.PathArcTo(center, radius, a0, a0 + progress * MathF.PI * 2f, 0);
+                drawList.PathArcTo(center, radius,
+                    a0 + (1f - progress) * MathF.PI * 2f, a0 + MathF.PI * 2f, 0);
                 drawList.PathStroke(
                     SimplePalette.ToU32(SimplePalette.WithAlpha(SimplePalette.TextPrimary, 0.9f)),
                     ImDrawFlags.None, 线宽);
@@ -405,7 +411,7 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
                     const float fontScale = 1.1f;
                     var fontSize = ImGui.GetFontSize() * fontScale;
                     var ts = ImGui.CalcTextSize(text) * fontScale;
-                    var tp = (min + max) * 0.5f - ts * 0.5f;
+                    var tp = new Vector2(min.X + 3f, max.Y - ts.Y - 2f);
                     drawList.AddText(ImGui.GetFont(), fontSize, tp + new Vector2(1f, 1f), 4278190080u, text);
                     drawList.AddText(ImGui.GetFont(), fontSize, tp, 4294967295u, text);
                 }
@@ -418,8 +424,8 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
             var tex = 取贴图($"Charge{Math.Min(n, 3)}.png");
             if (tex != null)
             {
-                // 充能角标占格子 1/16 面积（边长 1/4）, 贴右下角
-                var size = (max - min) * 0.25f;
+                
+                var size = (max - min) * 0.45f;
                 drawList.AddImage(tex.Handle, max - size - new Vector2(2f, 1f),
                     max - new Vector2(2f, 1f));
             }
@@ -455,9 +461,9 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
     private static readonly Vector4 角标红 = new(0.92f, 0.30f, 0.32f, 1f);   // 输出
     private static readonly Vector4 角标黄 = new(1.00f, 0.85f, 0.25f, 1f);   // 不限定职业
 
-    // 数字/职能角标贴图：左上角, 边长 ≈ 格子边长的 1/√3（面积约 1/3）, 70% 不透明度
+    // 数字/职能角标贴图：左上角, 边长 ≈ 格子边长的 1/√3（面积约 1/3）, 
     private const float 角标边长比 = 0.577f;
-    private const uint 角标着色 = 0xB3FFFFFFu; // ImGui 0xAABBGGRR, alpha 0xB3 ≈ 70%, 白色不染色
+    private const uint 角标着色 = 0xFFFFFFFFu; // ImGui 0xAABBGGRR, 
 
     // 自定义热键的目标角标：小队成员2-8 → 左上角 Num2-8.png 数字贴图;
     // 血量最低的队友/坦克/奶妈/输出 → 左上角对应职能贴图（062144/062581/062582/062583）。
