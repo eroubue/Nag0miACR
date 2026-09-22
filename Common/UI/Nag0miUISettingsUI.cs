@@ -208,8 +208,9 @@ public static class Nag0miUISettingsUI
         }
     }
 
-    // 热键显隐列表：与 QT 列表同一标准——图标 + 首字角标（不显示文字名, 悬浮显全名）,
-    // 图标尺寸跟随热键面板, 复选框同步缩放; 自定义热键另画目标角标（与悬浮面板一致）。
+    // 热键显隐列表：图标行（不显示文字名, 悬浮显全名）, 显示与热键面板完全一致——
+    // 角标只有自定义热键的目标角标, 面板没有的角标这里也不画;
+    // 图标尺寸跟随热键面板, 复选框同步缩放。
     // 图标来源优先级与面板相同：游戏内原始图标 id → customIconPath → Action 表动作图标;
     // 条目缺失（面板尚未构建）退化问号图标。
     private static void DrawHotkeyVisibilityList(Nag0miUISettings s, ref bool hkRebuild)
@@ -239,7 +240,7 @@ public static class Nag0miUISettingsUI
                 ImGui.Dummy(new Vector2(图标边长));   // 贴图未就绪当帧占位, 布局不跳
             var rectMin = ImGui.GetItemRectMin();
             var rectMax = ImGui.GetItemRectMax();
-            画底部角标(string.IsNullOrEmpty(name) ? null : name[..1], 图标边长);
+            // 角标与热键面板完全一致：仅自定义热键的目标角标（面板没有的角标这里也不画）
             if (目标角标表.TryGetValue(name, out var 角标目标))
                 Nag0miUIHotkeyPanelWindow.DrawTargetBadge(ImGui.GetWindowDrawList(), 角标目标, rectMin, rectMax);
             if (ImGui.IsItemHovered())

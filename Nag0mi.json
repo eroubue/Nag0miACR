@@ -1,6 +1,6 @@
 {
   "author": "Nag0mi",
-  "version": "1.14",
+  "version": "1.15",
   "description": "\u843D\u9B44\u8C37\u4E2D\u5BD2\u98CE\u5439\uFF0C\u6625\u79CB\u8749\u9E23\u5C11\u5E74\u5F52\u3002",
   "supportedJobs": [
     {
@@ -10,8 +10,8 @@
   ],
   "apiVersion": 15,
   "referencePromeVersion": "1.5.10.3",
-  "downloadUrl": "https://github.com/eroubue/Nag0miACR/releases/download/V1.14/Nag0mi.zip",
+  "downloadUrl": "https://github.com/eroubue/Nag0miACR/releases/download/V1.15/Nag0mi.zip",
   "sourceRepositoryUrl": "https://github.com/eroubue/Nag0miACR/",
   "sponsorUrl": "",
-  "sha256": "df845333dbe90c99683e34423ce30a99bcf7550c658046c5aa1840b339561abe"
+  "sha256": "94125bb4e55384d58d4b70cf7d5e77e0d1b4673efc880c68f489804e9e9c65d0"
 }
