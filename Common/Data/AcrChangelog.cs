@@ -4,7 +4,7 @@ namespace Nag0mi.Common.Data;
 // 并在此处追加对应条目（日期 / 版本 / 内容）。Version 与清单文件中的 version 保持一致。
 public static class AcrChangelog
 {
-    public const string Version = "1.10";
+    public const string Version = "1.11";
 
     public enum LineKind { Add, Remove, Note }
 
@@ -13,6 +13,10 @@ public static class AcrChangelog
 
     public static readonly Entry[] Entries =
     [
+        new("2026-09-22", "1.11",
+        [
+            new(LineKind.Remove, "修复侧边栏页签文字仍被裁剪：改为隐形按钮承载交互 + AddText 手动绘制文字（Button 会把文字裁剪到按钮矩形内），侧栏宽度跟随最宽文字自适应（修「面板控制」的「制」被裁）"),
+        ]),
         new("2026-09-22", "1.10",
         [
             new(LineKind.Remove, "修复设置窗口侧边栏页签文字顶部被裁剪：行高从固定 28px 改为跟随书法字体实际字号（22px 字体超出 28px 行高被按钮裁剪）"),

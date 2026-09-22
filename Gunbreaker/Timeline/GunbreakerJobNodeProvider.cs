@@ -10,6 +10,8 @@ public sealed class GunbreakerJobNodeProvider : IJobNodeProvider
 {
     public void RegisterNodes(RotationNodeContext context)
     {
+        // 覆盖内置「使用爆发药」行为：接入本 ACR 的爆发药 QT 门禁
+        GunbreakerPotionGate.Install();
         GunbreakerQtAction.Register(context);
         GunbreakerSettingsAction.Register(context);
         GunbreakerHotkeyAction.Register(context);

@@ -47,142 +47,116 @@ public abstract partial class SettingsWindowBase
     // 侧边栏布局：左侧竖排导航 + 右侧内容区。
     private void DrawSidebarLayout()
     {
-        const float navWidth = 120f;
-
         // 外层窗口原点与拖动位移：拖动把手在子窗内, 位移须在 EndChild 后施加到外层窗口
         var outerPos = ImGui.GetWindowPos();
         var dragDelta = Vector2.Zero;
 
-        ImGui.BeginChild("##side_nav", new Vector2(navWidth, 0f), false,
-            ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
+        // 侧边栏页签用标题书法字体（未就绪时自动回落默认字体）
+        var titleFont = ShuimoFont.Title;
+        var fontPop = titleFont is { Available: true } ? titleFont.Push() : null;
         try
         {
-            // 导航文字左对齐
-            ImGui.PushStyleVar(ImGuiStyleVar.ButtonTextAlign, new Vector2(0f, 0.5f));
-
-            // 侧边栏页签用标题书法字体（未就绪时自动回落默认字体）
-            var titleFont = ShuimoFont.Title;
-            var fontPop = titleFont is { Available: true } ? titleFont.Push() : null;
-
-            // 页签行高跟随实际字号：22px 书法字体塞 28px 行高会被按钮裁剪掉字形顶部
-            // （FramePadding.Y 上下各占 4px），按字号+内边距+余量取高，默认字体回落 28px
-            var navItemHeight = MathF.Max(28f,
-                ImGui.GetFontSize() + ImGui.GetStyle().FramePadding.Y * 2f + 4f);
-
-            var now = ImGui.GetTime();
             var labels = AllTabs;
 
-            // 首帧全部直接落位，不做入场动画
-            prevTabLabels ??= new HashSet<string>(labels);
-
-            // 出现走展开动效; 收起直接消失（不保留淡出项, 不推挤下方按钮）
+            // 页签行高跟随实际字号：22px 书法字体塞 28px 行高过挤，按字号+内边距+余量取高，
+            // 默认字体回落 28px；侧栏宽度跟随最宽文字——固定 120px 在书法字体/宿主全局缩放下
+            // 会裁掉最宽页签的末字（如「面板控制」的「制」），下限 120px
+            var navItemHeight = MathF.Max(28f,
+                ImGui.GetFontSize() + ImGui.GetStyle().FramePadding.Y * 2f + 4f);
+            var navWidth = 120f;
             for (var i = 0; i < labels.Length; i++)
             {
-                var label = labels[i];
-                if (!tabAnims.TryGetValue(label, out var st))
-                    tabAnims[label] = st = new TabAnimState
+                var indent = TabGroup(i) != null ? 12f : 0f;   // 分组子项右缩进
+                var w = ImGui.CalcTextSize(labels[i]).X + 8f + indent + 8f;
+                if (w > navWidth) navWidth = MathF.Ceiling(w);
+                if (TabGroup(i) is { } g && (i == 0 || TabGroup(i - 1) != g))
+                {
+                    var gw = ImGui.CalcTextSize(g).X + 16f;
+                    if (gw > navWidth) navWidth = MathF.Ceiling(gw);
+                }
+            }
+
+            ImGui.BeginChild("##side_nav", new Vector2(navWidth, 0f), false,
+                ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
+            try
+            {
+                var now = ImGui.GetTime();
+
+                // 首帧全部直接落位，不做入场动画
+                prevTabLabels ??= new HashSet<string>(labels);
+
+                // 出现走展开动效; 收起直接消失（不保留淡出项, 不推挤下方按钮）
+                for (var i = 0; i < labels.Length; i++)
+                {
+                    var label = labels[i];
+                    if (!tabAnims.TryGetValue(label, out var st))
+                        tabAnims[label] = st = new TabAnimState
+                        {
+                            T = prevTabLabels.Contains(label) ? 1f : 0f,
+                            起始T = prevTabLabels.Contains(label) ? 1f : 0f,
+                            起始时刻 = now,
+                        };
+                    st.LastIndex = i;
+                    推进TabAnim(st, 1f, now);
+                }
+                var dead = tabAnims.Where(kv => Array.IndexOf(labels, kv.Key) < 0).Select(kv => kv.Key).ToList();
+                foreach (var key in dead) tabAnims.Remove(key);
+
+                prevTabLabels = new HashSet<string>(labels);
+
+                var drawn = 0;
+                string? prevGroup = null;
+                for (var i = 0; i < labels.Length; i++)
+                {
+                    var label = labels[i];
+                    var t = tabAnims[label].T;
+                    if (t <= 0f) continue;
+
+                    // 分组标题（可点击：跳转组内首个子栏; 透明底 + 次级文字色, 悬停淡染）
+                    var group = TabGroup(i);
+                    if (group != null && group != prevGroup)
                     {
-                        T = prevTabLabels.Contains(label) ? 1f : 0f,
-                        起始T = prevTabLabels.Contains(label) ? 1f : 0f,
-                        起始时刻 = now,
-                    };
-                st.LastIndex = i;
-                推进TabAnim(st, 1f, now);
-            }
-            var dead = tabAnims.Where(kv => Array.IndexOf(labels, kv.Key) < 0).Select(kv => kv.Key).ToList();
-            foreach (var key in dead) tabAnims.Remove(key);
+                        if (drawn > 0) ImGui.Spacing();
+                        if (DrawNavRow($"##group{i}", group, 24f, 1f, SimplePalette.TextSecondary, active: false))
+                            currentTab = i;
+                        drawn++;
+                    }
+                    prevGroup = group;
 
-            prevTabLabels = new HashSet<string>(labels);
-
-            var drawn = 0;
-            string? prevGroup = null;
-            for (var i = 0; i < labels.Length; i++)
-            {
-                var label = labels[i];
-                var t = tabAnims[label].T;
-                if (t <= 0f) continue;
-
-                // 分组标题（可点击：跳转组内首个子栏; 透明底 + 次级文字色, 悬停淡染）
-                var group = TabGroup(i);
-                if (group != null && group != prevGroup)
-                {
-                    if (drawn > 0) ImGui.Spacing();
-                    ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
-                    ImGui.PushStyleColor(ImGuiCol.ButtonHovered, SimplePalette.FrameBgHovered);
-                    ImGui.PushStyleColor(ImGuiCol.ButtonActive, SimplePalette.FrameBgActive);
-                    ImGui.PushStyleColor(ImGuiCol.Text, SimplePalette.TextSecondary);
-                    if (ImGui.Button($"{group}##group{i}", new Vector2(-1f, 24f)))
-                        currentTab = i;
-                    ImGui.PopStyleColor(4);
+                    if (drawn > 0)
+                    {
+                        if (t >= 1f) ImGui.Spacing();
+                        else ImGui.Dummy(new Vector2(1f, ImGui.GetStyle().ItemSpacing.Y * t));
+                    }
                     drawn++;
-                }
-                prevGroup = group;
 
-                if (drawn > 0)
+                    var isActive = i == currentTab;
+                    if (DrawNavRow($"##tab{i}", label, navItemHeight * t, t,
+                            isActive ? SimplePalette.NavActiveText : SimplePalette.TextSecondary,
+                            isActive, group != null ? 12f : 0f))
+                        currentTab = i;
+                }
+
+                // 页签下方的剩余空白区作为窗口拖动把手（无标题栏后唯一的移动途径）,
+                // 填满侧边栏剩余高度; 空间不足一行的极端情况跳过
+                var rest = ImGui.GetContentRegionAvail();
+                if (rest.Y > 4f)
                 {
-                    if (t >= 1f) ImGui.Spacing();
-                    else ImGui.Dummy(new Vector2(1f, ImGui.GetStyle().ItemSpacing.Y * t));
+                    ImGui.InvisibleButton("##nav_drag", new Vector2(-1f, -1f));
+                    if (ImGui.IsItemActive() && ImGui.IsMouseDragging(ImGuiMouseButton.Left))
+                        dragDelta = ImGui.GetIO().MouseDelta;
+                    if (ImGui.IsItemHovered())
+                        ImGui.SetTooltip("按住拖动窗口");
                 }
-                drawn++;
-
-                // 分组子项右缩进 12px, 与分组标题形成层级（宽 -1 自动随缩进收敛）
-                if (group != null)
-                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + 12f);
-
-                var isActive = i == currentTab;
-                if (isActive)
-                {
-                    // 激活项：透明底 + 血红字, 左侧 3px 血红竖条（按钮绘制后补画）
-                    ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
-                    ImGui.PushStyleColor(ImGuiCol.ButtonHovered, SimplePalette.WithAlpha(SimplePalette.Accent, 0.12f));
-                    ImGui.PushStyleColor(ImGuiCol.ButtonActive, SimplePalette.WithAlpha(SimplePalette.Accent, 0.22f));
-                    ImGui.PushStyleColor(ImGuiCol.Text, SimplePalette.NavActiveText);
-                }
-                else
-                {
-                    ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
-                    ImGui.PushStyleColor(ImGuiCol.ButtonHovered, SimplePalette.FrameBgHovered);
-                    ImGui.PushStyleColor(ImGuiCol.ButtonActive, SimplePalette.FrameBgActive);
-                    ImGui.PushStyleColor(ImGuiCol.Text, SimplePalette.TextSecondary);
-                }
-
-                // 展开中: 高度插值 + 整体透明渐入
-                ImGui.PushStyleVar(ImGuiStyleVar.Alpha, t);
-                if (ImGui.Button(label, new Vector2(-1f, navItemHeight * t)))
-                    currentTab = i;
-                ImGui.PopStyleVar();
-
-                // 激活项左侧 3px 血红竖条（跟随展开动效透明度）
-                if (isActive)
-                {
-                    var itemMin = ImGui.GetItemRectMin();
-                    var itemMax = ImGui.GetItemRectMax();
-                    var bar = SimplePalette.NavActiveText;
-                    ImGui.GetWindowDrawList().AddRectFilled(
-                        itemMin + new Vector2(0f, 3f), new Vector2(itemMin.X + 3f, itemMax.Y - 3f),
-                        SimplePalette.ToU32(SimplePalette.WithAlpha(bar, bar.W * t)), 1.5f);
-                }
-
-                ImGui.PopStyleColor(4);
             }
-
-            // 页签下方的剩余空白区作为窗口拖动把手（无标题栏后唯一的移动途径）,
-            // 填满侧边栏剩余高度; 空间不足一行的极端情况跳过
-            var rest = ImGui.GetContentRegionAvail();
-            if (rest.Y > 4f)
+            finally
             {
-                ImGui.InvisibleButton("##nav_drag", new Vector2(-1f, -1f));
-                if (ImGui.IsItemActive() && ImGui.IsMouseDragging(ImGuiMouseButton.Left))
-                    dragDelta = ImGui.GetIO().MouseDelta;
-                if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip("按住拖动窗口");
+                ImGui.EndChild();
             }
-            fontPop?.Dispose();
-            ImGui.PopStyleVar();
         }
         finally
         {
-            ImGui.EndChild();
+            fontPop?.Dispose();
         }
 
         // 空白区拖动：位移施加到外层窗口（子窗内 SetWindowPos 只会动子窗）
@@ -200,5 +174,49 @@ public abstract partial class SettingsWindowBase
         // 右侧间距与左侧对齐：左 = WindowPadding.X(16)，右 = 按钮到内容区同样 16
         ImGui.SameLine(0f, 16f);
         DrawContentChild();
+    }
+
+    // 侧栏导航行：隐形按钮承载悬停/点击，文字用 AddText 手画——ImGui.Button 会把文字
+    // 裁剪到按钮矩形内，书法字体（22px，随宿主全局缩放放大）超出固定行高时字形顶部被裁掉；
+    // 手动绘制只受子窗口裁剪，配合动态侧栏宽度不再裁字。
+    // 返回 true = 本行被点击。active 项悬停淡染改用强调色并画左侧 3px 血红竖条;
+    // alpha 跟随页签展开动效（背景/文字/竖条同步渐显）。
+    private static bool DrawNavRow(string id, string text, float height, float alpha, Vector4 textColor,
+        bool active, float indent = 0f)
+    {
+        if (indent > 0f)
+            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + indent);
+        ImGui.InvisibleButton(id, new Vector2(-1f, height));
+        var clicked = ImGui.IsItemClicked();
+        var hovered = ImGui.IsItemHovered();
+        var held = ImGui.IsItemActive();
+
+        var min = ImGui.GetItemRectMin();
+        var max = ImGui.GetItemRectMax();
+        var drawList = ImGui.GetWindowDrawList();
+
+        // 悬停/按下底色淡染（与原按钮配色一致：普通项 FrameBg 系, 激活项强调色系）
+        var bg = held
+            ? active ? SimplePalette.WithAlpha(SimplePalette.Accent, 0.22f) : SimplePalette.FrameBgActive
+            : hovered
+                ? active ? SimplePalette.WithAlpha(SimplePalette.Accent, 0.12f) : SimplePalette.FrameBgHovered
+                : Vector4.Zero;
+        if (bg.W > 0f && alpha > 0f)
+            drawList.AddRectFilled(min, max, SimplePalette.ToU32(SimplePalette.WithAlpha(bg, bg.W * alpha)), 3f);
+
+        // 文字垂直居中、左对齐（与原 ButtonTextAlign(0,0.5) + FramePadding.X=8 一致）
+        var textSize = ImGui.CalcTextSize(text);
+        var textPos = new Vector2(min.X + 8f, min.Y + (max.Y - min.Y - textSize.Y) * 0.5f);
+        drawList.AddText(textPos,
+            SimplePalette.ToU32(SimplePalette.WithAlpha(textColor, textColor.W * alpha)), text);
+
+        // 激活项左侧 3px 血红竖条
+        if (active)
+        {
+            var bar = SimplePalette.NavActiveText;
+            drawList.AddRectFilled(min + new Vector2(0f, 3f), new Vector2(min.X + 3f, max.Y - 3f),
+                SimplePalette.ToU32(SimplePalette.WithAlpha(bar, bar.W * alpha)), 1.5f);
+        }
+        return clicked;
     }
 }
