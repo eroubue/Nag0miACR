@@ -66,6 +66,9 @@ public static class ShuimoDraw
     // 当前模式素材选择：暗色用反色笔触贴图（对应上游暗色 filter:invert()）
     public static IDalamudTextureWrap? 宣纸 => Tex(ShuimoPalette.DarkMode ? "paper_warm.png" : "paper_cold.png");
     public static IDalamudTextureWrap? 笔触边框 => Tex(ShuimoPalette.DarkMode ? "brush_border_inv.png" : "brush_border.png");
+    // 染色专用白笔触贴图：白笔触透明底, 乘法染色后呈状态色（明色的 brush_border 为近黑笔触,
+    // 乘法染色无法把黑像素染亮, 状态色必须走本贴图）
+    public static IDalamudTextureWrap? 笔触边框白 => Tex("brush_border_inv.png");
     public static IDalamudTextureWrap? 笔触勾选框 => Tex(ShuimoPalette.DarkMode ? "brush_checkbox_inv.png" : "brush_checkbox.png");
     public static IDalamudTextureWrap? 笔触墨点 => Tex(ShuimoPalette.DarkMode ? "brush_check_inv.png" : "brush_check.png");
 
@@ -130,21 +133,35 @@ public static class ShuimoDraw
         drawList.AddImage(h, new Vector2(x1, y1), new Vector2(x2, y2), new Vector2(su, sv), new Vector2(1f - su, 1f - sv), col);
     }
 
-    // 窗口/面板外壳笔触边框（白色素描边, 暗色模式自动用反色贴图）
+    // 窗口/面板外壳笔触边框（白色素描边, 暗色模式自动用反色贴图）。
+    // 贴图描边本体 alpha 仅约 0.6, 单遍过淡融进纸底, 叠画两遍压实描边。
     public static void DrawBrushFrame(ImDrawListPtr drawList, Vector2 min, Vector2 max, float edge = 8f)
     {
         var tex = 笔触边框;
-        if (tex != null)
-            DrawNineSlice(drawList, min, max, tex, edge, Vector4.One);
+        if (tex == null) return;
+        DrawNineSlice(drawList, min, max, tex, edge, Vector4.One);
+        DrawNineSlice(drawList, min, max, tex, edge, Vector4.One);
     }
 
-    // 状态描边：笔触边框按状态色染色（启用=青 / 关闭=血红）
+    // 状态描边：白笔触贴图按状态色乘法染色（启用=青 / 关闭=血红）
     public static void DrawBrushStateFrame(ImDrawListPtr drawList, Vector2 min, Vector2 max, Vector4 stateColor, float edge = 5f)
     {
-        var tex = 笔触边框;
+        var tex = 笔触边框白;
         if (tex == null) return;
-        // 染色用状态色 + 原贴图 alpha: 反色贴图为浅底深纹, 乘法染色后纹理呈状态色
         DrawNineSlice(drawList, min, max, tex, edge, stateColor);
+    }
+
+    // ============================================================
+    // === 悬浮提示（面板悬浮窗用） ===
+    // ============================================================
+    // 面板 PreDraw 把 ImGuiCol.Text 压成了墨色, 会漏进 tooltip 叠在深色弹窗底上不可读;
+    // 悬浮提示统一白字 + 近黑实底, 与面板自身的明暗样式解耦。
+    public static void SetTooltipLight(string text)
+    {
+        ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(1f, 1f, 1f, 1f));
+        ImGui.PushStyleColor(ImGuiCol.PopupBg, new Vector4(0.04f, 0.035f, 0.03f, 0.98f));
+        ImGui.SetTooltip(text);
+        ImGui.PopStyleColor(2);
     }
 
     // ============================================================

@@ -191,10 +191,10 @@ internal sealed class Nag0miUIControlWindow : Window
         buttonHovered |= ImGui.IsItemHovered();
         Tooltip($"当前模式：{模式显示名()}\n左键循环切换模式\n每套配置独立保存");
 
-        // 3. 自动攻击键（开=彩色高亮 / 关=暗化）
+        // 3. 自动攻击键（开=彩色高亮 / 关=缟羽压暗——墨锭深底上禁用灰/黑不可辨, 固定用压暗亮色）
         var autoPull = host.AutoPull;
         if (IconButton("AutoPull", FontAwesomeIcon.Crosshairs, OverlayBerthShape.ButtonRows[2],
-                autoPull ? SimplePalette.StateRunning : SimplePalette.TextDisabled))
+                autoPull ? SimplePalette.StateRunning : ShuimoPalette.WithAlpha(ShuimoPalette.Hex(0xEEEEEE), 0.45f)))
             host.AutoPull = !autoPull;
         buttonHovered |= ImGui.IsItemHovered();
         Tooltip($"自动攻击：{(autoPull ? "已开启" : "已关闭")}\n左键切换");

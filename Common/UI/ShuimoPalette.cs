@@ -32,10 +32,10 @@ public static class ShuimoPalette
 
     // 文字：明=墨 #2B333E / 暗=缟羽 #EEEEEE
     public static Vector4 Text => DarkMode ? Hex(0xEEEEEE) : Hex(0x2B333E);
-    // 辅助文字：明=#74787A / 暗=青鸾 #9AA7B1
-    public static Vector4 TextSecondary => DarkMode ? Hex(0x9AA7B1) : Hex(0x74787A);
-    // 禁用文字：明=#74787A / 暗=#5E616D
-    public static Vector4 TextDisabled => DarkMode ? Hex(0x5E616D) : Hex(0x74787A);
+    // 辅助文字：明=黑 / 暗=青鸾 #9AA7B1（明色灰字在宣纸灰底上对比度不足, 统一改黑）
+    public static Vector4 TextSecondary => DarkMode ? Hex(0x9AA7B1) : Hex(0x000000);
+    // 禁用文字：明=黑 / 暗=#5E616D
+    public static Vector4 TextDisabled => DarkMode ? Hex(0x5E616D) : Hex(0x000000);
 
     // 控件底色（墨色淡染）：明=墨汁淡染 / 暗=缟羽淡染
     public static Vector4 FrameBg => DarkMode ? WithAlpha(Hex(0xEEEEEE), 0.10f) : WithAlpha(Hex(0x2B333E), 0.08f);

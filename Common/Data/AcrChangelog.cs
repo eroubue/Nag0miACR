@@ -4,7 +4,7 @@ namespace Nag0mi.Common.Data;
 // 并在此处追加对应条目（日期 / 版本 / 内容）。Version 与清单文件中的 version 保持一致。
 public static class AcrChangelog
 {
-    public const string Version = "1.5";
+    public const string Version = "1.6";
 
     public enum LineKind { Add, Remove, Note }
 
@@ -13,6 +13,14 @@ public static class AcrChangelog
 
     public static readonly Entry[] Entries =
     [
+        new("2026-09-22", "1.6",
+        [
+            new(LineKind.Remove, "修复明色模式瓦片状态描边染色不显示（状态色改经白笔触贴图乘法染色）"),
+            new(LineKind.Remove, "修复笔触边框过淡几乎不可见（叠画两遍压实描边）"),
+            new(LineKind.Remove, "修复 QT/热键面板悬浮提示墨字叠深底不可读（改白字 + 近黑实底）"),
+            new(LineKind.Note, "设置面板灰色字体明色模式统一改黑（辅助/禁用文字与硬编码灰字）"),
+            new(LineKind.Remove, "修复控制条自动攻击关闭图标在深墨锭底上不可辨（改压暗缟羽）"),
+        ]),
         new("2026-09-21", "1.5",
         [
             new(LineKind.Add, "水墨主题：全部界面改为宣纸底/笔触边框/血红主色，支持明(冷宣)/暗(暖宣)手动切换（设置页「基础设置」勾选暗色模式，即改即存、下一帧全窗口生效）"),

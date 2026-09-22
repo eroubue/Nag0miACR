@@ -178,7 +178,7 @@ public partial class GunbreakerRotation
         }
         else
         {
-            ImGui.TextColored(new Vector4(0.6f, 0.6f, 0.6f, 1f), "  等待战斗数据...");
+            ImGui.TextColored(ShuimoPalette.TextSecondary, "  等待战斗数据...");
         }
 
         ImGui.Dummy(new Vector2(0, 5));
@@ -191,7 +191,7 @@ public partial class GunbreakerRotation
         ImGui.TextColored(new Vector4(.8f, .9f, 1, 1), name);
         foreach (var status in statuses)
         {
-            var color = status.Success ? new Vector4(.3f, 1, .3f, 1) : new Vector4(.7f, .7f, .7f, 1);
+            var color = status.Success ? new Vector4(.3f, 1, .3f, 1) : ShuimoPalette.TextSecondary;
             ImGui.TextColored(color, $"  [{status.Name}] {(status.Success ? "O" : "X")} {status.Message}");
         }
         ImGui.Spacing();

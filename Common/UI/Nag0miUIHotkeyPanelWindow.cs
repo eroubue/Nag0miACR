@@ -286,7 +286,7 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
                 drawList.AddImage(activeTex.Handle, min - new Vector2(1.5f), max + new Vector2(1.5f));
         }
 
-        if (hovered) ImGui.SetTooltip(name);
+        if (hovered) ShuimoDraw.SetTooltipLight(name);
     }
 
     // 技能激活判定：技能对应的 buff 仍在生效（见 Nag0miUIJobEnv.HotkeyActiveBuffs 映射）。

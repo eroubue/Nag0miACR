@@ -262,7 +262,7 @@ public sealed class Nag0miUIQtPanelWindow : Window
                 SimplePalette.ToU32(SimplePalette.QtOnGlow), 99f);
 
         if (hovered)
-            ImGui.SetTooltip($"{def.Label}：{(on ? "已启用" : "已关闭")}\n左键开关{(locked ? "" : " · 右键拖动排序")}");
+            ShuimoDraw.SetTooltipLight($"{def.Label}：{(on ? "已启用" : "已关闭")}\n左键开关{(locked ? "" : " · 右键拖动排序")}");
     }
 
     // QT 图标解析：使用方经 Nag0miUIJobEnv.Configure 注入的解析器;

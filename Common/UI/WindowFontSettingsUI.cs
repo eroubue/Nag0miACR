@@ -27,7 +27,7 @@ public static class WindowFontSettingsUI
 
             if (!settings.EnableCustomFont)
             {
-                ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1f), "使用默认字体");
+                ImGui.TextColored(SimplePalette.TextSecondary, "使用默认字体");
             }
             else
             {
@@ -169,7 +169,7 @@ public static class WindowFontSettingsUI
         });
         ImGui.EndChild();
 
-        ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1f),
+        ImGui.TextColored(SimplePalette.TextSecondary,
             $"类型: {settings.FontType switch
             {
                 FontType.SystemFont => "系统字体",

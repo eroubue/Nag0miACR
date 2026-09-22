@@ -23,8 +23,8 @@ internal static class ShuimoPaletteTests
     {
         ShuimoPalette.DarkMode = false;
         Check.Equal(ShuimoPalette.Hex(0x2B333E), ShuimoPalette.Text);        // 墨
-        Check.Equal(ShuimoPalette.Hex(0x74787A), ShuimoPalette.TextSecondary);
-        Check.Equal(ShuimoPalette.Hex(0x74787A), ShuimoPalette.TextDisabled);
+        Check.Equal(ShuimoPalette.Hex(0x000000), ShuimoPalette.TextSecondary); // 黑（灰字低对比, 统一改黑）
+        Check.Equal(ShuimoPalette.Hex(0x000000), ShuimoPalette.TextDisabled);
     }
 
     private static void DarkModeColors()
