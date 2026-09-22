@@ -22,9 +22,6 @@ public abstract partial class SettingsWindowBase : Window
     // 基础全局样式的颜色 Push 数量（Pop 时使用；侧边栏 chrome 在此基础上增量 Push，见 SidebarChromeColorCount）。
     private const int BaseStyleColorCount = 22;
 
-    // 窗口标题文字（无标题栏, 标题画在侧边栏顶部节点兼作拖动把手, 见 SettingsWindowBase.Sidebar.cs）
-    private readonly string titleText;
-
     // Tab 列表
     protected abstract string[] Tabs { get; }
 
@@ -61,8 +58,7 @@ public abstract partial class SettingsWindowBase : Window
     protected SettingsWindowBase(string title)
         : base(title, ImGuiWindowFlags.NoCollapse)
     {
-        titleText = title;
-        // 原生标题文字置空（无标题栏, 标题画在侧边栏顶部节点；### 后缀保持 ImGui 窗口标识不变）
+        // 原生标题文字置空（无标题栏；### 后缀保持 ImGui 窗口标识不变）
         WindowName = $"###Nag0miUI.Settings.{GetType().Name}";
         // 最小尺寸兜底：防止历史损坏的持久化尺寸或 ImGui 异常把窗口锁死
         SizeConstraints = new WindowSizeConstraints
@@ -80,7 +76,7 @@ public abstract partial class SettingsWindowBase : Window
 
     public override void PreDraw()
     {
-        // 无标题栏：顶部栏整圈让给纸底与笔触边框, 标题挪进侧边栏顶部节点（兼作拖动把手）
+        // 无标题栏：顶部栏整圈让给纸底与笔触边框, 拖动走侧边栏空白区（见 SettingsWindowBase.Sidebar.cs）
         Flags |= ImGuiWindowFlags.NoTitleBar;
 
         var layout = Layout;

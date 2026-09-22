@@ -50,7 +50,7 @@ public abstract partial class SettingsWindowBase
         const float navWidth = 120f;
         const float navItemHeight = 28f;
 
-        // 外层窗口原点与拖动位移：标题节点在子窗内, 位移须在 EndChild 后施加到外层窗口
+        // 外层窗口原点与拖动位移：拖动把手在子窗内, 位移须在 EndChild 后施加到外层窗口
         var outerPos = ImGui.GetWindowPos();
         var dragDelta = Vector2.Zero;
 
@@ -64,23 +64,6 @@ public abstract partial class SettingsWindowBase
             // 侧边栏页签用标题书法字体（未就绪时自动回落默认字体）
             var titleFont = ShuimoFont.Title;
             var fontPop = titleFont is { Available: true } ? titleFont.Push() : null;
-
-            // 标题节点（无标题栏: 窗口标题挪进侧边栏顶部, 兼作窗口拖动把手）
-            ImGui.InvisibleButton("##title_node", new Vector2(-1f, 32f));
-            if (ImGui.IsItemActive() && ImGui.IsMouseDragging(ImGuiMouseButton.Left))
-                dragDelta = ImGui.GetIO().MouseDelta;
-            if (ImGui.IsItemHovered())
-                ImGui.SetTooltip("按住拖动窗口");
-            {
-                var nodeMin = ImGui.GetItemRectMin();
-                var nodeMax = ImGui.GetItemRectMax();
-                var textSize = ImGui.CalcTextSize(titleText);
-                // 与下方页签文字同一视觉起点（FramePadding.X）
-                var textPos = new Vector2(nodeMin.X + 8f,
-                    nodeMin.Y + (nodeMax.Y - nodeMin.Y - textSize.Y) * 0.5f);
-                ImGui.GetWindowDrawList().AddText(textPos,
-                    SimplePalette.ToU32(ShuimoPalette.Hex(0xEEEEEE)), titleText);
-            }
 
             var now = ImGui.GetTime();
             var labels = AllTabs;
@@ -178,6 +161,18 @@ public abstract partial class SettingsWindowBase
 
                 ImGui.PopStyleColor(4);
             }
+
+            // 页签下方的剩余空白区作为窗口拖动把手（无标题栏后唯一的移动途径）,
+            // 填满侧边栏剩余高度; 空间不足一行的极端情况跳过
+            var rest = ImGui.GetContentRegionAvail();
+            if (rest.Y > 4f)
+            {
+                ImGui.InvisibleButton("##nav_drag", new Vector2(-1f, -1f));
+                if (ImGui.IsItemActive() && ImGui.IsMouseDragging(ImGuiMouseButton.Left))
+                    dragDelta = ImGui.GetIO().MouseDelta;
+                if (ImGui.IsItemHovered())
+                    ImGui.SetTooltip("按住拖动窗口");
+            }
             fontPop?.Dispose();
             ImGui.PopStyleVar();
         }
@@ -186,7 +181,7 @@ public abstract partial class SettingsWindowBase
             ImGui.EndChild();
         }
 
-        // 标题节点拖动：位移施加到外层窗口（子窗内 SetWindowPos 只会动子窗）
+        // 空白区拖动：位移施加到外层窗口（子窗内 SetWindowPos 只会动子窗）
         if (dragDelta != Vector2.Zero)
             ImGui.SetWindowPos(outerPos + dragDelta);
 
