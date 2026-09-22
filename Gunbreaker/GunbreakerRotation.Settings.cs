@@ -6,7 +6,6 @@ using Nag0mi.Gunbreaker.Control;
 using Nag0mi.Gunbreaker.Data;
 using PromeRotation.Core;
 using PromeRotation.Helpers;
-using PromeRotation.Managers;
 
 namespace Nag0mi.Gunbreaker;
 
@@ -159,41 +158,8 @@ public partial class GunbreakerRotation
             ImGui.TextUnformatted($"5m敌数: {rawCount}（将死{dying}，有效{Math.Max(0, rawCount - dying)}）");
         }
 
-        ImGui.TextColored(new Vector4(0.5f, 1f, 1f, 1f), "—————— Solver状态 ——————");
-
-        if (RotationManager.AlwaysSolverStatus.Count + RotationManager.GcdSolverStatus.Count
-            + RotationManager.OffGcdSolverStatus.Count > 0)
-        {
-            var visible = ImGui.BeginChild("SolverStatus", new Vector2(0, 400 * ImGuiHelpers.GlobalScale), true);
-            try
-            {
-                if (visible)
-                {
-                    DrawSolverStatuses("Always", RotationManager.AlwaysSolverStatus);
-                    DrawSolverStatuses("GCD", RotationManager.GcdSolverStatus);
-                    DrawSolverStatuses("OffGCD", RotationManager.OffGcdSolverStatus);
-                }
-            }
-            finally { ImGui.EndChild(); }
-        }
-        else
-        {
-            ImGui.TextColored(ShuimoPalette.TextSecondary, "  等待战斗数据...");
-        }
-
         ImGui.Dummy(new Vector2(0, 5));
     }
 
     private static string Fmt(int breakpoint) => breakpoint == int.MaxValue ? "-" : breakpoint.ToString();
-
-    private static void DrawSolverStatuses(string name, IEnumerable<SolverStatus> statuses)
-    {
-        ImGui.TextColored(new Vector4(.8f, .9f, 1, 1), name);
-        foreach (var status in statuses)
-        {
-            var color = status.Success ? new Vector4(.3f, 1, .3f, 1) : ShuimoPalette.TextSecondary;
-            ImGui.TextColored(color, $"  [{status.Name}] {(status.Success ? "O" : "X")} {status.Message}");
-        }
-        ImGui.Spacing();
-    }
 }

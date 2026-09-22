@@ -4,7 +4,7 @@ namespace Nag0mi.Common.Data;
 // 并在此处追加对应条目（日期 / 版本 / 内容）。Version 与清单文件中的 version 保持一致。
 public static class AcrChangelog
 {
-    public const string Version = "1.9";
+    public const string Version = "1.10";
 
     public enum LineKind { Add, Remove, Note }
 
@@ -13,6 +13,11 @@ public static class AcrChangelog
 
     public static readonly Entry[] Entries =
     [
+        new("2026-09-22", "1.10",
+        [
+            new(LineKind.Remove, "修复设置窗口侧边栏页签文字顶部被裁剪：行高从固定 28px 改为跟随书法字体实际字号（22px 字体超出 28px 行高被按钮裁剪）"),
+            new(LineKind.Remove, "移除「开发用」页签的 Solver 状态区块"),
+        ]),
         new("2026-09-22", "1.9",
         [
             new(LineKind.Remove, "删除设置窗口侧边栏顶部的标题栏（Nag0mi 绝枪战士设置文字节点），窗口拖动改为按住侧边栏页签下方的空白区"),

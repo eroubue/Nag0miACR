@@ -48,7 +48,6 @@ public abstract partial class SettingsWindowBase
     private void DrawSidebarLayout()
     {
         const float navWidth = 120f;
-        const float navItemHeight = 28f;
 
         // 外层窗口原点与拖动位移：拖动把手在子窗内, 位移须在 EndChild 后施加到外层窗口
         var outerPos = ImGui.GetWindowPos();
@@ -64,6 +63,11 @@ public abstract partial class SettingsWindowBase
             // 侧边栏页签用标题书法字体（未就绪时自动回落默认字体）
             var titleFont = ShuimoFont.Title;
             var fontPop = titleFont is { Available: true } ? titleFont.Push() : null;
+
+            // 页签行高跟随实际字号：22px 书法字体塞 28px 行高会被按钮裁剪掉字形顶部
+            // （FramePadding.Y 上下各占 4px），按字号+内边距+余量取高，默认字体回落 28px
+            var navItemHeight = MathF.Max(28f,
+                ImGui.GetFontSize() + ImGui.GetStyle().FramePadding.Y * 2f + 4f);
 
             var now = ImGui.GetTime();
             var labels = AllTabs;

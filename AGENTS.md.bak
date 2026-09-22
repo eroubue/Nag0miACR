@@ -38,5 +38,5 @@
 
 ## 5. 需求与参考查询
 
-- 需求本体/PR本体相关源码 直接查阅本地仓库：`C:\Users\ASUS\Documents\GitHub\PromeRotation`。
+- 需求相关源码与 PR 直接查阅本地仓库：`C:\Users\ASUS\Documents\GitHub\PromeRotation`。
 - 该仓库仅作为需求与行为参考；其名称不得出现在本仓库的注释、提交信息或代码标识符中。
