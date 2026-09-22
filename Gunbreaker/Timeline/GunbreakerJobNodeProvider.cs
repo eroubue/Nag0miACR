@@ -16,8 +16,10 @@ public sealed class GunbreakerJobNodeProvider : IJobNodeProvider
         GunbreakerSettingsAction.Register(context);
         GunbreakerHotkeyAction.Register(context);
         GunbreakerShotBlacklistAction.Register(context);
+        GunbreakerAoeRingAction.Register(context);
         GunbreakerAmmoCondition.Register(context);
         GunbreakerComboCondition.Register(context);
+        GunbreakerAoeCountCondition.Register(context);
     }
 
     public IReadOnlyList<(string DisplayName, string Description, Func<ICondition> Create)> GetConditionDescriptors()
@@ -25,6 +27,7 @@ public sealed class GunbreakerJobNodeProvider : IJobNodeProvider
         {
             ("绝枪/检测量谱-子弹比较", "按比较符判断当前子弹数量", () => new GunbreakerAmmoCondition()),
             ("绝枪/检测连击进度", "判断上一个连击 GCD 的进度(1-3)", () => new GunbreakerComboCondition()),
+            ("绝枪/检测5m有效AOE敌数", "5m 内敌数减去将死敌数，按比较符判断", () => new GunbreakerAoeCountCondition()),
         };
 
     public IReadOnlyList<(string DisplayName, string Description, Func<IAction> Create)> GetActionDescriptors()
@@ -34,5 +37,6 @@ public sealed class GunbreakerJobNodeProvider : IJobNodeProvider
             ("绝枪/设置", "修改绝枪战斗设置", () => new GunbreakerSettingsAction()),
             ("绝枪/热键", "触发已注册的绝枪热键", () => new GunbreakerHotkeyAction()),
             ("绝枪/闪雷弹黑名单管理", "管理闪雷弹黑名单 DataId", () => new GunbreakerShotBlacklistAction()),
+            ("绝枪/5m圆环绘制", "以玩家为圆心绘制/关闭 5m 圆环（内径 4.9m 外径 5.0m）", () => new GunbreakerAoeRingAction()),
         };
 }

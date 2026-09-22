@@ -34,7 +34,7 @@ internal static class APIHelper
         PromeSettings.Instance.ClearQts();
         foreach (var k in qt.Keys.ToList())
             if (!Nag0miUIJobEnv.QtAll.ContainsKey(k)) qt.Remove(k);
-        // 按用户自定义顺序注册（QT面板页/悬浮面板拖拽调整; 未调整过 = QT 表定义顺序）,
+        // 按用户自定义顺序注册（悬浮面板右键拖拽调整; 未调整过 = QT 表定义顺序）,
         // 宿主 QuickToggles 键序与悬浮面板保持同序
         foreach (var key in Nag0miUISettings.Instance.GetOrderedQtKeys())
         {

@@ -17,6 +17,19 @@ public static class WindowBackgroundSettingsUI
         {
             ImGui.Indent(10f);
 
+            // 默认宣纸底不透明度（启用自定义背景图时置灰, 图片透明度另有滑杆）
+            ImGui.BeginDisabled(settings.EnableBackgroundImage);
+            ImGui.Text("背景透明度:");
+            ImGui.SetNextItemWidth(200f);
+            if (ImGui.SliderFloat("##纸底透明度", ref settings.BackgroundOpacity, 0.0f, 1.0f, "%.2f"))
+                saveAction?.Invoke();
+            ImGui.EndDisabled();
+            if (settings.EnableBackgroundImage)
+            {
+                ImGui.SameLine();
+                ImGui.TextDisabled("启用背景图时无效");
+            }
+
             if (ImGui.Checkbox("启用背景图片", ref settings.EnableBackgroundImage))
                 saveAction?.Invoke();
 
@@ -102,11 +115,5 @@ public static class WindowBackgroundSettingsUI
         DrawWindowBackgroundSettings("设置窗口", settingsWindow, saveAction);
         DrawWindowBackgroundSettings("QT面板", qtPanel, saveAction);
         DrawWindowBackgroundSettings("热键面板", hotkeyPanel, saveAction);
-
-        ImGui.Separator();
-        ImGui.TextColored(new Vector4(0.5f, 0.8f, 1f, 1f), "使用提示:");
-        ImGui.BulletText("支持 PNG/JPG/BMP/WebP 等常见图片格式");
-        ImGui.BulletText("图片自动保持宽高比并居中裁切铺满窗口");
-        ImGui.BulletText("建议使用分辨率适中的图片以获得最佳效果");
     }
 }

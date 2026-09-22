@@ -349,7 +349,7 @@ public sealed class Nag0miUIQtPanelWindow : Window
 
     // 面板底色与边框：画进窗口自身的绘制列表（先垫占位命令，见 Nag0miUILayer），
     // 保证两个窗口重叠时背景仍然盖住身后窗口的内容。
-    // 水墨底 = 宣纸平铺（透明度沿用面板惯例 0.85）+ 笔触边框；QT 面板不铺山水（瓦片太小只剩噪点）。
+    // 水墨底 = 宣纸平铺（不透明度见个性化页窗口背景设置）+ 笔触边框；QT 面板不铺山水（瓦片太小只剩噪点）。
     private void DrawWindowChrome()
     {
         var pos = ImGui.GetWindowPos();
@@ -359,10 +359,10 @@ public sealed class Nag0miUIQtPanelWindow : Window
         // 覆盖 Begin 压入的内容区内层裁剪, 底色/边框画满全窗口（本窗无标题栏）
         drawList.PushClipRect(pos, max, false);
 
-        // 自定义背景图（设置页「个性化」配置）优先于默认宣纸底
+        // 自定义背景图（设置页「个性化」配置）优先于默认宣纸底; 纸底不透明度逐窗可调
         if (!WindowBackgroundManager.DrawBackgroundImage(drawList,
                 Nag0miUICommonSettings.Instance.Qt面板背景, pos, ImGui.GetWindowSize(), 4f))
-            ShuimoDraw.DrawPaper(drawList, pos, max, 0.85f);
+            ShuimoDraw.DrawPaper(drawList, pos, max, Nag0miUICommonSettings.Instance.Qt面板背景.BackgroundOpacity);
         drawList.PopClipRect();
 
         drawList.PushClipRectFullScreen();

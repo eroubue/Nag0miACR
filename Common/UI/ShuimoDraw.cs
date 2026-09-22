@@ -76,12 +76,14 @@ public static class ShuimoDraw
     // === 宣纸平铺 ===
     // ============================================================
     // 明=冷宣平铺; 暗=黑底 + 暖宣 50% 透明平铺（对应上游暗色 ricePaper）。
-    // alpha 跟随面板现有透明度惯例（设置窗 0.95, 悬浮面板 0.85）。调用方负责裁剪。
+    // alpha = 调用方面板的背景不透明度（设置页「个性化 → 窗口背景」逐窗可调）;
+    // 暗色黑底同步按 alpha 缩放, 否则暗色模式下调低透明度不生效。调用方负责裁剪。
     public static void DrawPaper(ImDrawListPtr drawList, Vector2 min, Vector2 max, float alpha)
     {
         var dark = ShuimoPalette.DarkMode;
-        if (dark)
-            drawList.AddRectFilled(min, max, SimplePalette.ToU32(ShuimoPalette.DarkBase));
+        var baseAlpha = Math.Clamp(alpha, 0f, 1f);
+        if (dark && baseAlpha > 0f)
+            drawList.AddRectFilled(min, max, SimplePalette.ToU32(ShuimoPalette.WithAlpha(ShuimoPalette.DarkBase, baseAlpha)));
 
         var tex = 宣纸;
         if (tex == null || tex.Handle == IntPtr.Zero) return;
@@ -171,12 +173,13 @@ public static class ShuimoDraw
     // ============================================================
     // 五张山水: lf=左上 lm=左中 mlb=中下 rb=右下 rf=右远（定位语义与上游 ricePaper 一致）;
     // 暗色模式用暗色变体贴图。
-    public static void DrawMountains(ImDrawListPtr drawList, Vector2 min, Vector2 max)
+    // alphaScale 跟随纸底不透明度, 纸底调淡时装饰层同比例淡出
+    public static void DrawMountains(ImDrawListPtr drawList, Vector2 min, Vector2 max, float alphaScale = 1f)
     {
         var dark = ShuimoPalette.DarkMode;
         var suf = dark ? "_d" : "";
         // 装饰层透明度：纸底之上隐约可见即可, 不抢内容可读性
-        var alpha = dark ? 0.60f : 0.50f;
+        var alpha = (dark ? 0.60f : 0.50f) * Math.Clamp(alphaScale, 0f, 1f);
         var tint = SimplePalette.ToU32(new Vector4(1f, 1f, 1f, alpha));
         var w = max.X - min.X;
         var h = max.Y - min.Y;

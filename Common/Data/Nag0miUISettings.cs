@@ -73,11 +73,11 @@ public class Nag0miUISettings
     // 锁定热键面板位置: 开启后热键悬浮面板不可左键拖动（防战斗误移）
     public bool 热键面板位置锁定 = false;
 
-    // 自定义热键（设置页 Hotkey 页管理：技能+目标 组合; 显示名唯一, 参与排序与显隐）
+    // 自定义热键（设置页「热键自定义」页管理：技能+目标 组合; 显示名唯一, 参与排序与显隐）
     public List<CustomHotkeyEntry> CustomHotkeys = new();
 
     // ============================================================
-    // === QT 面板（每职业一套布局; QT面板页滑块可调） ===
+    // === QT 面板（每职业一套布局; 面板控制页滑杆可调） ===
     // ============================================================
     // QT 面板每行按钮数
     public int QtPanelColumns = 3;
@@ -89,12 +89,12 @@ public class Nag0miUISettings
     public int QtPanelScalePercent = 100;
 
     // ============================================================
-    // === QT 面板排列顺序（每职业一套; QT面板页上移/下移 + 悬浮面板拖拽可调） ===
+    // === QT 面板排列顺序（每职业一套; 悬浮面板右键拖拽可调） ===
     // ============================================================
     // QT 面板按钮自定义顺序（完整键序; 未调整过为空 = 按 QT 表定义顺序显示）
     public List<string> QtOrder = new();
 
-    // 锁定 QT 排序: 开启后悬浮面板按钮不可拖拽换位（防战斗误拖）, 设置页上移/下移不受影响
+    // 锁定 QT 排序: 开启后悬浮面板按钮不可拖拽换位（防战斗误拖）
     public bool QtPanelOrderLocked = false;
 
     // QT 悬浮面板位置（左键拖动缝隙落盘; null = 首次居中）
@@ -262,8 +262,8 @@ public class Nag0miUISettings
         if (modeIndex < 0 || modeIndex >= Nag0miUIJobEnv.ModeCount) return;
         if (ModeIndex == modeIndex) return;
         ModeIndex = modeIndex;
-        // 切模式即重置为目标模式的默认 QT（QT面板页默认值子视图配置，缺省走出厂默认）；
-        // 不再用切换瞬间的实时状态覆盖默认值——想存当前状态请用 QT面板页的「从当前QT导入」
+        // 切模式即重置为目标模式的默认 QT（面板控制页 QT 列表配置，缺省走出厂默认）；
+        // 不再用切换瞬间的实时状态覆盖默认值——想存当前状态请用面板控制页的「从当前QT导入」
         RestoreQtSnapshot(modeIndex);
         // 重建 QT 可见性（按模式归属过滤）——否则面板不同步
         APIHelper.重建QT可见性();

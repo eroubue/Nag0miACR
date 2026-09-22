@@ -4,7 +4,7 @@ namespace Nag0mi.Common.Data;
 // 并在此处追加对应条目（日期 / 版本 / 内容）。Version 与清单文件中的 version 保持一致。
 public static class AcrChangelog
 {
-    public const string Version = "1.11";
+    public const string Version = "1.12";
 
     public enum LineKind { Add, Remove, Note }
 
@@ -13,6 +13,21 @@ public static class AcrChangelog
 
     public static readonly Entry[] Entries =
     [
+        new("2026-09-22", "1.12",
+        [
+            new(LineKind.Add, "设置窗侧边栏重组：面板控制独立分组（含个性化），基础设置分组含循环设置/热键自定义"),
+            new(LineKind.Add, "三窗口背景透明度逐窗可调（个性化→窗口背景）"),
+            new(LineKind.Remove, "QT 显隐/默认值合并为图标双复选框列表；删除模式切换行并精简说明文字"),
+        ]),
+        new("2026-09-22", "1.12",
+        [
+            new(LineKind.Add, "时间轴「使用爆发药」行为接入本 ACR 爆发药 QT 门禁：QT 未开启时不执行并输出日志「爆发药QT未开启」"),
+        ]),
+        new("2026-09-22", "1.12",
+        [
+            new(LineKind.Add, "新增时间轴行为「绝枪/5m圆环绘制」：以玩家为圆心绘制/关闭内径4.9m、外径5.0m的圆环"),
+            new(LineKind.Add, "新增时间轴条件「绝枪/检测5m有效AOE敌数」：5m内实际敌数减去将死敌数后按比较符判断"),
+        ]),
         new("2026-09-22", "1.11",
         [
             new(LineKind.Remove, "修复侧边栏页签文字仍被裁剪：改为隐形按钮承载交互 + AddText 手动绘制文字（Button 会把文字裁剪到按钮矩形内），侧栏宽度跟随最宽文字自适应（修「面板控制」的「制」被裁）"),

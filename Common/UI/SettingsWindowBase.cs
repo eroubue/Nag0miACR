@@ -203,12 +203,14 @@ public abstract partial class SettingsWindowBase : Window
         // 不覆盖会把底色四条边各裁掉一条
         drawList.PushClipRect(min, min + size, false);
         // 自定义背景图（设置页「个性化」配置）优先于默认宣纸底；
-        // 默认底 = 宣纸平铺 + 山水装饰层（纸底之上、内容之下, 非交互）
+        // 默认底 = 宣纸平铺 + 山水装饰层（纸底之上、内容之下, 非交互）;
+        // 纸底/山水的不透明度读「个性化 → 窗口背景」的逐窗设置
         if (!WindowBackgroundManager.DrawBackgroundImage(drawList,
                 Nag0miUICommonSettings.Instance.设置窗口背景, min + new Vector2(0.5f), size - new Vector2(1f), 4f))
         {
-            ShuimoDraw.DrawPaper(drawList, min, min + size, 0.95f);
-            ShuimoDraw.DrawMountains(drawList, min, min + size);
+            var alpha = Nag0miUICommonSettings.Instance.设置窗口背景.BackgroundOpacity;
+            ShuimoDraw.DrawPaper(drawList, min, min + size, alpha);
+            ShuimoDraw.DrawMountains(drawList, min, min + size, alpha);
         }
         drawList.PopClipRect();
 

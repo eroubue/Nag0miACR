@@ -220,11 +220,5 @@ public static class WindowFontSettingsUI
         DrawWindowFontSettings("设置窗口", settingsWindow, saveAction);
         DrawWindowFontSettings("QT面板", qtPanel, saveAction);
         DrawWindowFontSettings("热键面板", hotkeyPanel, saveAction);
-
-        ImGui.Separator();
-        ImGui.TextColored(new Vector4(0.5f, 0.8f, 1f, 1f), "使用提示:");
-        ImGui.BulletText("支持 TTF/OTF/TTC/WOFF 等常见字体格式");
-        ImGui.BulletText("字体大小建议在 12-24px 之间以获得最佳显示效果");
-        ImGui.BulletText("字体变更下一帧即生效, 无需重启");
     }
 }

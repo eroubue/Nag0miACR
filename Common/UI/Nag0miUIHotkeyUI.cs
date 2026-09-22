@@ -24,7 +24,7 @@ internal static class Nag0miUIHotkeyUI
         var b = new Nag0miUIHotkeyBuilder(Nag0miUISettings.Instance);
         Nag0miUIJobEnv.BuildHotkeys?.Invoke(b);
 
-        // 自定义热键（设置页 Hotkey 页管理）：走 Execute 通道, 图标/冷却/待发高亮由面板现有逻辑覆盖,
+        // 自定义热键（设置页「热键自定义」页管理）：走 Execute 通道, 图标/冷却/待发高亮由面板现有逻辑覆盖,
         // 同时进影子面板, 时间轴热键节点可按名触发
         foreach (var e in Nag0miUISettings.Instance.CustomHotkeys)
             b.Execute(e.Name, new ExecuteLogic(() => CustomHotkeyExecutor.Fire(e)), iconActionID: e.SkillId);

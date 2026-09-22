@@ -43,4 +43,8 @@ public class WindowBackgroundSettings
 
     /// 背景图片透明度 (0-1)
     public float BackgroundImageOpacity = 0.3f;
+
+    /// 默认宣纸底不透明度 (0-1；0 = 完全无底色，文字悬浮于游戏画面)。
+    /// 仅默认底色生效；启用自定义背景图时由 BackgroundImageOpacity 接管。
+    public float BackgroundOpacity = 1f;
 }

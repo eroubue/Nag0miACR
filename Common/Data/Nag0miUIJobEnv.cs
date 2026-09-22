@@ -45,7 +45,7 @@ internal static class Nag0miUIJobEnv
     public static IReadOnlyDictionary<string, (string key, bool invert)[]> QtCascadeRules { get; private set; }
         = new Dictionary<string, (string, bool)[]>();
 
-    /// <summary>热键面板的按钮名全集，设置页 Hotkey 显隐列表以此为准。</summary>
+    /// <summary>热键面板的按钮名全集，面板控制页热键显隐列表以此为准。</summary>
     public static string[] HotkeyNames { get; private set; } = Array.Empty<string>();
 
     /// <summary>自定义热键的技能下拉清单（技能id, 显示名, 类型），由使用方注入；为空时设置页不显示自定义热键小节。</summary>
@@ -64,9 +64,12 @@ internal static class Nag0miUIJobEnv
     /// 返回 null 或 iconId==0 时面板走退化显示（问号图标 + QT 显示名首字角标）。</summary>
     public static Func<string, (uint iconId, bool isGameIcon, string? marker)>? QtIconResolver { get; private set; }
 
-    /// <summary>设置窗口的额外页签（追加在固定页 基础设置/Hotkey/QT面板 之后），由使用方注入。</summary>
+    /// <summary>设置窗口的额外页签（追加在固定页 面板控制/个性化/循环设置/热键自定义 之后），由使用方注入。</summary>
     public static (string label, System.Action draw)[] ExtraTabs { get; private set; }
         = Array.Empty<(string, System.Action)>();
+
+    /// <summary>设置窗口「循环设置」固定页签（基础设置分组子栏）的绘制委托，由使用方注入；未注入时该页空白。</summary>
+    public static System.Action? CycleSettingsDraw { get; private set; }
 
     /// <summary>控制条「模式」键点击回调（切到下一模式），由使用方注入；未注入时该键不响应。</summary>
     public static System.Action? CycleMode { get; private set; }
@@ -103,6 +106,7 @@ internal static class Nag0miUIJobEnv
         Func<string, (uint iconId, bool isGameIcon, string? marker)>? qtIconResolver = null,
         Func<string, int, bool>? qtDefaultVisible = null,
         (string label, System.Action draw)[]? extraTabs = null,
+        System.Action? cycleSettingsTab = null,
         System.Action? cycleMode = null,
         Func<string>? currentModeLabel = null,
         (uint Id, string Name, PromeRotation.Data.ActionType Type)[]? customHotkeySkills = null,
@@ -126,6 +130,7 @@ internal static class Nag0miUIJobEnv
         if (qtTab技能 != null) QtTab技能 = qtTab技能;
         if (qtTab资源 != null) QtTab资源 = qtTab资源;
         ExtraTabs = extraTabs ?? Array.Empty<(string, System.Action)>();
+        CycleSettingsDraw = cycleSettingsTab;
         CycleMode = cycleMode;
         CurrentModeLabel = currentModeLabel;
         CustomHotkeySkills = customHotkeySkills ?? Array.Empty<(uint, string, PromeRotation.Data.ActionType)>();

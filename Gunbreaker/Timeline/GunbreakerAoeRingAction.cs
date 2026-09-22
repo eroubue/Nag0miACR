@@ -1,4 +1,3 @@
-using PromeRotation;
 using PromeRotation.Core;
 using PromeRotation.Spatial.Drawing;
 using PromeRotation.Spatial.Geometry;
@@ -53,7 +52,7 @@ public sealed class GunbreakerAoeRingAction : IAction, ISerializableAction, IJob
     {
         if (_mode == nameof(DrawMode.关闭绘制))
         {
-            Plugin.Instance.DrawManager.Remove(DrawId);
+            PromeRotation.Plugin.Instance.DrawManager.Remove(DrawId);
             return;
         }
 
@@ -62,7 +61,7 @@ public sealed class GunbreakerAoeRingAction : IAction, ISerializableAction, IJob
             return;
 
         // 固定 ID：重复执行开始绘制时直接覆盖同一条目，圆环通过 Follow 绑定始终跟随玩家
-        Plugin.Instance.DrawManager.AddBound(
+        PromeRotation.Plugin.Instance.DrawManager.AddBound(
             DrawId,
             new DonutGeometry(me.Position, InnerRadius, OuterRadius),
             DrawBinding.Follow(me),

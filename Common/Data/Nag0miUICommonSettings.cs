@@ -24,9 +24,9 @@ public class Nag0miUICommonSettings
     public WindowFontSettings Qt面板字体 = new();
     public WindowFontSettings 热键面板字体 = new();
 
-    public WindowBackgroundSettings 设置窗口背景 = new();
-    public WindowBackgroundSettings Qt面板背景 = new();
-    public WindowBackgroundSettings 热键面板背景 = new();
+    public WindowBackgroundSettings 设置窗口背景 = new() { BackgroundOpacity = 0.95f };
+    public WindowBackgroundSettings Qt面板背景 = new() { BackgroundOpacity = 0.85f };
+    public WindowBackgroundSettings 热键面板背景 = new() { BackgroundOpacity = 0.85f };
 
     // 水墨主题明暗模式（false=明/冷宣, true=暗/暖宣; 设置页「通用」切换, 运行期镜像在 ShuimoPalette.DarkMode）
     public bool DarkMode;

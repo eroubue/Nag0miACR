@@ -41,13 +41,14 @@ public static class Nag0miUIFramework
         Func<string, (uint iconId, bool isGameIcon, string? marker)>? qtIconResolver = null,
         Func<string, int, bool>? qtDefaultVisible = null,
         (string label, System.Action draw)[]? extraTabs = null,
+        System.Action? cycleSettingsTab = null,
         System.Action? cycleMode = null,
         Func<string>? currentModeLabel = null,
         (uint Id, string Name, PromeRotation.Data.ActionType Type)[]? customHotkeySkills = null,
         IReadOnlyDictionary<uint, (uint BuffId, bool SelfOnly)>? hotkeyActiveBuffs = null)
         => Nag0miUIJobEnv.Configure(jobTag, jobName, qtAll, qtIsMetaKey, qtIsVisibleInMode,
             qtDefault, qtCascadeRules, hotkeyNames, buildHotkeys, qtTab基础, qtTab技能, qtTab资源,
-            modeCount, modeNames, author, qtIconResolver, qtDefaultVisible, extraTabs, cycleMode, currentModeLabel,
+            modeCount, modeNames, author, qtIconResolver, qtDefaultVisible, extraTabs, cycleSettingsTab, cycleMode, currentModeLabel,
             customHotkeySkills, hotkeyActiveBuffs);
 
     /// <summary>注册全部窗口并完成初始化：接管宿主设置窗、加入控制条/设置窗/QT面板、

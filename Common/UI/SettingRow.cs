@@ -64,6 +64,43 @@ public static class SettingRow
         return changed;
     }
 
+    // 无文字手绘勾选框（紧凑列表用）：仅笔触框 + 墨点勾, 语义由 tooltip 承载; id 需调用方保证作用域内唯一。
+    public static bool BareCheckbox(string id, ref bool value, string? tooltip = null)
+    {
+        var drawList = ImGui.GetWindowDrawList();
+        var pos = ImGui.GetCursorScreenPos();
+        var frameH = ImGui.GetFrameHeight();
+        var boxSize = frameH;
+
+        var changed = ImGui.InvisibleButton(id, new Vector2(boxSize, frameH));
+        if (changed) value = !value;
+        var hovered = ImGui.IsItemHovered();
+
+        // 手绘勾选框（悬停染靛蓝）
+        var box = ShuimoDraw.笔触勾选框;
+        if (box != null)
+            drawList.AddImage(box.Handle, pos, pos + new Vector2(boxSize), Vector2.Zero, Vector2.One,
+                SimplePalette.ToU32(hovered ? ShuimoPalette.Hover : Vector4.One));
+
+        // 墨点勾：等比缩放到框内 75%, 染血红主色
+        if (value)
+        {
+            var check = ShuimoDraw.笔触墨点;
+            if (check != null)
+            {
+                var w = boxSize * 0.75f;
+                var h = w * check.Height / check.Width;
+                var cmin = pos + (new Vector2(boxSize) - new Vector2(w, h)) * 0.5f;
+                drawList.AddImage(check.Handle, cmin, cmin + new Vector2(w, h),
+                    Vector2.Zero, Vector2.One, SimplePalette.ToU32(ShuimoPalette.Main));
+            }
+        }
+
+        if (!string.IsNullOrEmpty(tooltip) && hovered)
+            ImGui.SetTooltip(tooltip);
+        return changed;
+    }
+
     // 按钮行。
     public static bool Button(string label, string? tooltip = null)
     {

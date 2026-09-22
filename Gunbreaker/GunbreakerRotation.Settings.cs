@@ -14,7 +14,7 @@ public partial class GunbreakerRotation
     public void DrawSettings() => DrawSettingsContent();
 
     // 宿主内嵌设置页：框架设置窗入口 + 循环配置（模式/参数）。QT 显隐、面板布局、
-    // QT 默认值等由框架设置窗（基础设置/Hotkey/QT面板 + 注入页签）覆盖。
+    // QT 默认值等由框架设置窗（面板控制/个性化/循环设置/热键自定义 + 注入页签）覆盖。
     private void DrawSettingsContent()
     {
         ImGui.PushID("Nag0mi.Gunbreaker.SettingsContent");
@@ -54,7 +54,7 @@ public partial class GunbreakerRotation
         }
     }
 
-    // 框架设置窗的「循环设置」注入页（extraTabs），内容与宿主「设置」页一致。
+    // 框架设置窗的「循环设置」固定页签（经 cycleSettingsTab 注入），内容与宿主「设置」页一致。
     private void DrawJobSettingsTab()
     {
         DrawGeneral();

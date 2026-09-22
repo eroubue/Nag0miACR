@@ -8,9 +8,8 @@ using Nag0mi.Gunbreaker.Control;
 namespace Nag0mi.Common.UI;
 
 // Nag0miUI 设置窗口（SettingsWindowBase 子类，多职业共用同一窗口类）。
-// 固定页签：面板控制 / 基础设置（两者归入侧边栏「基础设置」分组子栏）/ Hotkey / QT面板 / 个性化；
-// 使用方经 Nag0miUIJobEnv.Configure 注入的 extraTabs 追加在固定页之后
-// （原 ErosUI 的末位「主题」页已随主题系统一并剔除）。
+// 固定页签：面板控制 / 个性化（归入侧边栏「面板控制」分组）、循环设置 / 热键自定义
+// （归入「基础设置」分组）；使用方经 Nag0miUIJobEnv.Configure 注入的 extraTabs 追加在固定页之后。
 public sealed class Nag0miUISettingsWindow : SettingsWindowBase
 {
     // 通用设置里的布局记录键（WindowLayouts 字典）
@@ -62,21 +61,21 @@ public sealed class Nag0miUISettingsWindow : SettingsWindowBase
             if (tabsCache == null || !ReferenceEquals(extra, tabsCacheSource))
             {
                 tabsCacheSource = extra;
-                tabsCache = new string[5 + extra.Length];
+                tabsCache = new string[4 + extra.Length];
                 tabsCache[0] = "面板控制";
-                tabsCache[1] = "基础设置";
-                tabsCache[2] = "Hotkey";
-                tabsCache[3] = "QT面板";
-                tabsCache[4] = "个性化";
+                tabsCache[1] = "个性化";
+                tabsCache[2] = "循环设置";
+                tabsCache[3] = "热键自定义";
                 for (var i = 0; i < extra.Length; i++)
-                    tabsCache[5 + i] = extra[i].label;
+                    tabsCache[4 + i] = extra[i].label;
             }
             return tabsCache;
         }
     }
 
-    // 「面板控制」「基础设置」两栏归入侧边栏「基础设置」分组，作为其子栏缩进显示
-    protected override string? TabGroup(int tabIndex) => tabIndex is 0 or 1 ? "基础设置" : null;
+    // 「面板控制」「个性化」归入「面板控制」分组，「循环设置」「热键自定义」归入「基础设置」分组
+    protected override string? TabGroup(int tabIndex)
+        => tabIndex is 0 or 1 ? "面板控制" : tabIndex is 2 or 3 ? "基础设置" : null;
 
     protected override WindowLayoutState? Layout => layout;
 
@@ -85,13 +84,12 @@ public sealed class Nag0miUISettingsWindow : SettingsWindowBase
         switch (tabIndex)
         {
             case 0: Nag0miUISettingsUI.DrawPanelControl(); break;
-            case 1: Nag0miUISettingsUI.DrawBasicSettings(); break;
-            case 2: Nag0miUISettingsUI.DrawHotkey(); break;
-            case 3: Nag0miUISettingsUI.DrawQtPanel(); break;
-            case 4: Nag0miUISettingsUI.DrawPersonalization(); break;
+            case 1: Nag0miUISettingsUI.DrawPersonalization(); break;
+            case 2: Nag0miUIJobEnv.CycleSettingsDraw?.Invoke(); break;
+            case 3: Nag0miUISettingsUI.DrawHotkeyCustom(); break;
             default:
                 var extra = Nag0miUIJobEnv.ExtraTabs;
-                var i = tabIndex - 5;
+                var i = tabIndex - 4;
                 if (i >= 0 && i < extra.Length) extra[i].draw();
                 break;
         }
