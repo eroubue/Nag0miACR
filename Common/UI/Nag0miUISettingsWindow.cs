@@ -8,8 +8,9 @@ using Nag0mi.Gunbreaker.Control;
 namespace Nag0mi.Common.UI;
 
 // Nag0miUI 设置窗口（SettingsWindowBase 子类，多职业共用同一窗口类）。
-// 固定页签：基础设置 / Hotkey / QT面板；使用方经 Nag0miUIJobEnv.Configure 注入的
-// extraTabs 追加在固定页之后（原 ErosUI 的末位「主题」页已随主题系统一并剔除）。
+// 固定页签：面板控制 / 基础设置（两者归入侧边栏「基础设置」分组子栏）/ Hotkey / QT面板 / 个性化；
+// 使用方经 Nag0miUIJobEnv.Configure 注入的 extraTabs 追加在固定页之后
+// （原 ErosUI 的末位「主题」页已随主题系统一并剔除）。
 public sealed class Nag0miUISettingsWindow : SettingsWindowBase
 {
     // 通用设置里的布局记录键（WindowLayouts 字典）
@@ -61,17 +62,21 @@ public sealed class Nag0miUISettingsWindow : SettingsWindowBase
             if (tabsCache == null || !ReferenceEquals(extra, tabsCacheSource))
             {
                 tabsCacheSource = extra;
-                tabsCache = new string[4 + extra.Length];
-                tabsCache[0] = "基础设置";
-                tabsCache[1] = "Hotkey";
-                tabsCache[2] = "QT面板";
-                tabsCache[3] = "个性化";
+                tabsCache = new string[5 + extra.Length];
+                tabsCache[0] = "面板控制";
+                tabsCache[1] = "基础设置";
+                tabsCache[2] = "Hotkey";
+                tabsCache[3] = "QT面板";
+                tabsCache[4] = "个性化";
                 for (var i = 0; i < extra.Length; i++)
-                    tabsCache[4 + i] = extra[i].label;
+                    tabsCache[5 + i] = extra[i].label;
             }
             return tabsCache;
         }
     }
+
+    // 「面板控制」「基础设置」两栏归入侧边栏「基础设置」分组，作为其子栏缩进显示
+    protected override string? TabGroup(int tabIndex) => tabIndex is 0 or 1 ? "基础设置" : null;
 
     protected override WindowLayoutState? Layout => layout;
 
@@ -79,13 +84,14 @@ public sealed class Nag0miUISettingsWindow : SettingsWindowBase
     {
         switch (tabIndex)
         {
-            case 0: Nag0miUISettingsUI.DrawGeneral(); break;
-            case 1: Nag0miUISettingsUI.DrawHotkey(); break;
-            case 2: Nag0miUISettingsUI.DrawQtPanel(); break;
-            case 3: Nag0miUISettingsUI.DrawPersonalization(); break;
+            case 0: Nag0miUISettingsUI.DrawPanelControl(); break;
+            case 1: Nag0miUISettingsUI.DrawBasicSettings(); break;
+            case 2: Nag0miUISettingsUI.DrawHotkey(); break;
+            case 3: Nag0miUISettingsUI.DrawQtPanel(); break;
+            case 4: Nag0miUISettingsUI.DrawPersonalization(); break;
             default:
                 var extra = Nag0miUIJobEnv.ExtraTabs;
-                var i = tabIndex - 4;
+                var i = tabIndex - 5;
                 if (i >= 0 && i < extra.Length) extra[i].draw();
                 break;
         }
@@ -97,10 +103,11 @@ public sealed class Nag0miUISettingsWindow : SettingsWindowBase
         var vp = ImGui.GetMainViewport();
         var scale = ImGuiHelpers.GlobalScale;
         var size = Size ?? new Vector2(760f, 560f);
-        // 本窗未开 ForceMainWindow，Position 是屏幕绝对坐标，直接取用
+        // 本窗未开 ForceMainWindow，Position 是屏幕绝对坐标，直接取用;
+        // Once: 只在本次打开时落位——Always 会每帧强制回写该位置, 窗口被钉死无法拖动
         Position = OverlayGeometry.SettingsPosition(barPixelPosition, barPixelSize, side,
             vp.Pos, vp.Size, size * scale, scale);
-        PositionCondition = ImGuiCond.Always;
+        PositionCondition = ImGuiCond.Once;
         IsOpen = true;
         BringToFront();
     }

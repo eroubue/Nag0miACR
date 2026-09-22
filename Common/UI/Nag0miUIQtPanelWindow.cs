@@ -65,7 +65,8 @@ public sealed class Nag0miUIQtPanelWindow : Window
         ImGui.PushStyleColor(ImGuiCol.TextDisabled, SimplePalette.TextDisabled);
         ImGui.PushStyleColor(ImGuiCol.Border, SimplePalette.Border);
         ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, 4f);
-        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(14f, 12f));
+        // 内边距 16 ≥ 外壳笔触边框 12 + 4px 净距：瓦片不压笔触, 边框有完整展开空间
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(16f, 16f));
         base.PreDraw();
     }
 
@@ -254,7 +255,7 @@ public sealed class Nag0miUIQtPanelWindow : Window
         if (hovered)
             border = new Vector4(Math.Min(1f, border.X + 0.15f), Math.Min(1f, border.Y + 0.15f),
                 Math.Min(1f, border.Z + 0.15f), border.W);
-        ShuimoDraw.DrawBrushStateFrame(drawList, min, max, border, on ? 5f : 4f);
+        ShuimoDraw.DrawBrushStateFrame(drawList, min, max, border, on ? 7f : 6f);
 
         // 启用：底部约 3px 微光条（绿色）
         if (on)
@@ -364,7 +365,7 @@ public sealed class Nag0miUIQtPanelWindow : Window
         drawList.PopClipRect();
 
         drawList.PushClipRectFullScreen();
-        ShuimoDraw.DrawBrushFrame(drawList, pos, max, 7f);
+        ShuimoDraw.DrawBrushFrame(drawList, pos, max);
         drawList.PopClipRect();
     }
 

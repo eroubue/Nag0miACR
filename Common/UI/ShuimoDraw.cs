@@ -135,7 +135,8 @@ public static class ShuimoDraw
 
     // 窗口/面板外壳笔触边框（白色素描边, 暗色模式自动用反色贴图）。
     // 贴图描边本体 alpha 仅约 0.6, 单遍过淡融进纸底, 叠画两遍压实描边。
-    public static void DrawBrushFrame(ImDrawListPtr drawList, Vector2 min, Vector2 max, float edge = 8f)
+    // edge 默认 12：贴图 8px 笔触带放大 1.5 倍, 墨迹宽度才够清晰; 调用方内边距须 ≥ edge 留出笔触空间。
+    public static void DrawBrushFrame(ImDrawListPtr drawList, Vector2 min, Vector2 max, float edge = 12f)
     {
         var tex = 笔触边框;
         if (tex == null) return;
@@ -144,7 +145,8 @@ public static class ShuimoDraw
     }
 
     // 状态描边：白笔触贴图按状态色乘法染色（启用=青 / 关闭=血红）
-    public static void DrawBrushStateFrame(ImDrawListPtr drawList, Vector2 min, Vector2 max, Vector4 stateColor, float edge = 5f)
+    // edge 默认 7：瓦片描边要压得住 44px 格内的图标边缘, 4-5px 的细边在纸底上看不清。
+    public static void DrawBrushStateFrame(ImDrawListPtr drawList, Vector2 min, Vector2 max, Vector4 stateColor, float edge = 7f)
     {
         var tex = 笔触边框白;
         if (tex == null) return;

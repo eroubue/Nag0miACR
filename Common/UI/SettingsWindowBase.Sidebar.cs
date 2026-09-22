@@ -9,7 +9,7 @@ namespace Nag0mi.Common.UI;
 public abstract partial class SettingsWindowBase
 {
     // 侧边栏 chrome 增量样式的颜色 Push 数量（Pop 时与 BaseStyleColorCount 相加）。
-    private const int SidebarChromeColorCount = 7;
+    private const int SidebarChromeColorCount = 4;
 
     // 侧边栏按钮出现/消失动效状态（按标签记忆: T 0=收起 1=完全展开, 时间制缓动趋近目标值）。
     // 新出现的标签从 0 展开（高度+透明度渐入）; 被移除的标签淡出到 0 后才从序列删除。
@@ -50,6 +50,10 @@ public abstract partial class SettingsWindowBase
         const float navWidth = 120f;
         const float navItemHeight = 28f;
 
+        // 外层窗口原点与拖动位移：标题节点在子窗内, 位移须在 EndChild 后施加到外层窗口
+        var outerPos = ImGui.GetWindowPos();
+        var dragDelta = Vector2.Zero;
+
         ImGui.BeginChild("##side_nav", new Vector2(navWidth, 0f), false,
             ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
         try
@@ -60,6 +64,23 @@ public abstract partial class SettingsWindowBase
             // 侧边栏页签用标题书法字体（未就绪时自动回落默认字体）
             var titleFont = ShuimoFont.Title;
             var fontPop = titleFont is { Available: true } ? titleFont.Push() : null;
+
+            // 标题节点（无标题栏: 窗口标题挪进侧边栏顶部, 兼作窗口拖动把手）
+            ImGui.InvisibleButton("##title_node", new Vector2(-1f, 32f));
+            if (ImGui.IsItemActive() && ImGui.IsMouseDragging(ImGuiMouseButton.Left))
+                dragDelta = ImGui.GetIO().MouseDelta;
+            if (ImGui.IsItemHovered())
+                ImGui.SetTooltip("按住拖动窗口");
+            {
+                var nodeMin = ImGui.GetItemRectMin();
+                var nodeMax = ImGui.GetItemRectMax();
+                var textSize = ImGui.CalcTextSize(titleText);
+                // 与下方页签文字同一视觉起点（FramePadding.X）
+                var textPos = new Vector2(nodeMin.X + 8f,
+                    nodeMin.Y + (nodeMax.Y - nodeMin.Y - textSize.Y) * 0.5f);
+                ImGui.GetWindowDrawList().AddText(textPos,
+                    SimplePalette.ToU32(ShuimoPalette.Hex(0xEEEEEE)), titleText);
+            }
 
             var now = ImGui.GetTime();
             var labels = AllTabs;
@@ -87,11 +108,28 @@ public abstract partial class SettingsWindowBase
             prevTabLabels = new HashSet<string>(labels);
 
             var drawn = 0;
+            string? prevGroup = null;
             for (var i = 0; i < labels.Length; i++)
             {
                 var label = labels[i];
                 var t = tabAnims[label].T;
                 if (t <= 0f) continue;
+
+                // 分组标题（可点击：跳转组内首个子栏; 透明底 + 次级文字色, 悬停淡染）
+                var group = TabGroup(i);
+                if (group != null && group != prevGroup)
+                {
+                    if (drawn > 0) ImGui.Spacing();
+                    ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
+                    ImGui.PushStyleColor(ImGuiCol.ButtonHovered, SimplePalette.FrameBgHovered);
+                    ImGui.PushStyleColor(ImGuiCol.ButtonActive, SimplePalette.FrameBgActive);
+                    ImGui.PushStyleColor(ImGuiCol.Text, SimplePalette.TextSecondary);
+                    if (ImGui.Button($"{group}##group{i}", new Vector2(-1f, 24f)))
+                        currentTab = i;
+                    ImGui.PopStyleColor(4);
+                    drawn++;
+                }
+                prevGroup = group;
 
                 if (drawn > 0)
                 {
@@ -99,6 +137,10 @@ public abstract partial class SettingsWindowBase
                     else ImGui.Dummy(new Vector2(1f, ImGui.GetStyle().ItemSpacing.Y * t));
                 }
                 drawn++;
+
+                // 分组子项右缩进 12px, 与分组标题形成层级（宽 -1 自动随缩进收敛）
+                if (group != null)
+                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + 12f);
 
                 var isActive = i == currentTab;
                 if (isActive)
@@ -143,6 +185,10 @@ public abstract partial class SettingsWindowBase
         {
             ImGui.EndChild();
         }
+
+        // 标题节点拖动：位移施加到外层窗口（子窗内 SetWindowPos 只会动子窗）
+        if (dragDelta != Vector2.Zero)
+            ImGui.SetWindowPos(outerPos + dragDelta);
 
         // 竖分隔线
         ImGui.SameLine(0f, 0f);

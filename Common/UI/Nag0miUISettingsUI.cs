@@ -95,12 +95,16 @@ public static class Nag0miUISettingsUI
     }
 
     // ============================================================
-    public static void DrawGeneral()
+    // 「基础设置」分组下的两个子栏：面板控制 / 基础设置
+    public static void DrawPanelControl()
     {
         Hdr("面板控制");
         DrawPanelsVisibilityButton();
         DrawPanelPositionLocks();
+    }
 
+    public static void DrawBasicSettings()
+    {
         Hdr("基础设置");
         DrawModeSwitchRow();
         DrawDarkModeRow();

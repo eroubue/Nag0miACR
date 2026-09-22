@@ -4,7 +4,7 @@ namespace Nag0mi.Common.Data;
 // 并在此处追加对应条目（日期 / 版本 / 内容）。Version 与清单文件中的 version 保持一致。
 public static class AcrChangelog
 {
-    public const string Version = "1.6";
+    public const string Version = "1.7";
 
     public enum LineKind { Add, Remove, Note }
 
@@ -13,6 +13,12 @@ public static class AcrChangelog
 
     public static readonly Entry[] Entries =
     [
+        new("2026-09-22", "1.7",
+        [
+            new(LineKind.Add, "设置窗口改为无标题栏：标题挪进侧边栏顶部节点（兼作拖动把手），「面板控制」「基础设置」改为侧边栏基础设置分组下的两个子栏，分组标题可点击跳转"),
+            new(LineKind.Add, "笔触边框加粗：外壳边框 8→12px，QT/热键悬浮窗内边距加大到 16px 给笔触留空间，瓦片状态描边 4-5→6-7px"),
+            new(LineKind.Remove, "修复设置窗口经控制条打开后无法拖动（PositionCondition.Always 每帧钉死位置，改为 Once）"),
+        ]),
         new("2026-09-22", "1.6",
         [
             new(LineKind.Remove, "修复明色模式瓦片状态描边染色不显示（状态色改经白笔触贴图乘法染色）"),

@@ -85,7 +85,8 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
         ImGui.PushStyleColor(ImGuiCol.Text, SimplePalette.TextPrimary);
         ImGui.PushStyleColor(ImGuiCol.Border, SimplePalette.Border);
         ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, 4f);
-        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(14f, 12f));
+        // 内边距 16 ≥ 外壳笔触边框 12 + 4px 净距：格子不压笔触, 边框有完整展开空间
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(16f, 16f));
         base.PreDraw();
     }
 
@@ -262,7 +263,7 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
             drawList.AddRectFilled(min, max,
                 SimplePalette.ToU32(SimplePalette.WithAlpha(accent, 0.10f * pulse)), 圆角);
             ShuimoDraw.DrawBrushStateFrame(drawList, min, max,
-                SimplePalette.WithAlpha(accent, 0.9f), 4.5f);
+                SimplePalette.WithAlpha(accent, 0.9f), 7f);
         }
         else if (hk.ActionId != 0)
         {
@@ -276,7 +277,7 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
         // 描边：平时 BorderStrong, 悬停提亮到主文字色 40%（笔触边框染色承载）
         ShuimoDraw.DrawBrushStateFrame(drawList, min, max,
             hovered ? SimplePalette.WithAlpha(SimplePalette.TextPrimary, 0.40f)
-                    : SimplePalette.BorderStrong, 4f);
+                    : SimplePalette.BorderStrong, 7f);
 
         // 已释放且 buff 未结束：activeaction 金框盖在最上层
         if (hk.ActionId != 0 && 技能激活中(hk.ActionId))
@@ -506,7 +507,7 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
         drawList.PopClipRect();
 
         drawList.PushClipRectFullScreen();
-        ShuimoDraw.DrawBrushFrame(drawList, pos, max, 7f);
+        ShuimoDraw.DrawBrushFrame(drawList, pos, max);
         drawList.PopClipRect();
     }
 
