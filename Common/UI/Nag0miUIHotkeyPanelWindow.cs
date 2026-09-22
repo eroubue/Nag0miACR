@@ -389,8 +389,8 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
 
     // 自定义热键的目标角标：小队成员2-8 → 左上角 Num2-8.png 数字贴图;
     // 血量最低的队友/坦克/奶妈/输出 → 左上角对应职能贴图（062144/062581/062582/062583）。
-    // 内置贴图经 ShuimoDraw 取, 未就绪帧跳过。
-    private static void DrawTargetBadge(ImDrawListPtr drawList, CustomHotkeyTarget target, Vector2 min, Vector2 max)
+    // 内置贴图经 ShuimoDraw 取, 未就绪帧跳过。internal: 设置页「热键显隐」列表复用同一角标。
+    internal static void DrawTargetBadge(ImDrawListPtr drawList, CustomHotkeyTarget target, Vector2 min, Vector2 max)
     {
         var tileH = max.Y - min.Y;
 

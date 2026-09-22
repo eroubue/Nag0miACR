@@ -85,7 +85,7 @@ public class Nag0miUISettings
     // QT 面板按钮间距(px)
     public int QtPanelSpacing = 10;
 
-    // QT 面板缩放(%)（基准按钮 112×34px）
+    // QT 面板缩放(%)（100% 基准瓦片 52.8px = 初版的 120%）
     public int QtPanelScalePercent = 100;
 
     // ============================================================

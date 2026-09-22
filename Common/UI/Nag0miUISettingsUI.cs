@@ -1,6 +1,8 @@
 // Portions Copyright (c) Eros001377, MIT License. Ported from ErosUI.
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Textures;
+using ECommons.DalamudServices;
 using Nag0mi.Common.Data;
 using PromeRotation.Helpers;
 
@@ -108,17 +110,7 @@ public static class Nag0miUISettingsUI
         }
 
         Hdr("热键显隐");
-        foreach (var name in s.GetOrderedHotkeyNames())
-        {
-            bool shown = !s.HiddenHotkeys.Contains(name);
-            if (SettingRow.Checkbox(name, ref shown))
-            {
-                if (shown) s.HiddenHotkeys.Remove(name);
-                else if (!s.HiddenHotkeys.Contains(name)) s.HiddenHotkeys.Add(name);
-                s.Save();
-                hkRebuild = true;
-            }
-        }
+        DrawHotkeyVisibilityList(s, ref hkRebuild);
 
         if (hkRebuild)
         {
@@ -127,17 +119,47 @@ public static class Nag0miUISettingsUI
         }
     }
 
-    // QT 列表行图标边长(px)与解析失败回落（游戏内问号图标, 与悬浮面板同口径）
-    private const float QtListIconSize = 32f;
+    // QT/热键列表行图标解析失败回落（游戏内问号图标, 与悬浮面板同口径）
     private const uint 问号图标 = 60071u;
 
-    // QT 列表：每行 = QT 图标（悬浮显名）+ 复选框①显示/隐藏 + 复选框②默认值, 均按当前模式。
+    // 列表行复选框边长：跟随图标同步缩放, 不小于原生行高（缩到 50% 时也不比文字行矮）
+    private static float 复选框边长(float 图标边长)
+        => MathF.Max(ImGui.GetFrameHeight(), 图标边长 * 0.45f);
+
+    // 复选框相对图标垂直居中（SameLine 后调用, 光标下移差值的一半）
+    private static void 复选框垂直居中(float 图标边长, float 框边长)
+        => ImGui.SetCursorPosY(ImGui.GetCursorPosY() + MathF.Max(0f, (图标边长 - 框边长) * 0.5f));
+
+    // marker 角标：图标内底部深色条 + 居中文字（与悬浮面板同口径; 画在刚绘制的图标/Dummy 矩形上）
+    private static void 画底部角标(string? marker, float 图标边长)
+    {
+        if (string.IsNullOrEmpty(marker)) return;
+        var rectMin = ImGui.GetItemRectMin();
+        var rectMax = ImGui.GetItemRectMax();
+        var drawList = ImGui.GetWindowDrawList();
+        var font = ImGui.GetFont();
+        var fontSize = 图标边长 * 0.30f;
+        var stripHeight = fontSize * 1.3f;
+        var stripMin = new Vector2(rectMin.X, rectMax.Y - stripHeight);
+        drawList.AddRectFilled(stripMin, rectMax,
+            SimplePalette.ToU32(new Vector4(0.04f, 0.04f, 0.06f, 0.80f)));
+        var textSize = ImGui.CalcTextSize(marker) * (fontSize / ImGui.GetFontSize());
+        var textPos = stripMin + (new Vector2(rectMax.X - rectMin.X, stripHeight) - textSize) * 0.5f;
+        drawList.AddText(font, fontSize, textPos,
+            SimplePalette.ToU32(Vector4.One), marker);
+    }
+
+    // QT 列表：每行 = QT 图标（marker 角标, 悬浮显名, 尺寸跟随 QT 面板）+ 复选框①显示/隐藏
+    // + 复选框②默认值, 复选框随图标同步缩放, 均按当前模式。
     // 元键与当前模式不可见的模式专属键不列出; 顺序 = 自定义排序, 与悬浮面板一致。
     private static void DrawQtList()
     {
         var s = Nag0miUISettings.Instance;
         var dict = s.GetCurrentModeDefaults();
         ImGui.TextDisabled("显示 = QT 面板显隐 ｜ 默认 = 默认值开关（均按当前模式）");
+
+        var 图标边长 = Nag0miUIQtPanelWindow.图标边长;
+        var 框边长 = 复选框边长(图标边长);
 
         foreach (var key in s.GetOrderedQtKeys())
         {
@@ -147,23 +169,28 @@ public static class Nag0miUISettingsUI
             ImGui.PushID($"qtrow_{key}");
 
             var r = Nag0miUIJobEnv.QtIconResolver?.Invoke(key);
-            var (iconId, isGameIcon) = r is { iconId: > 0 } ? (r.Value.iconId, r.Value.isGameIcon) : (问号图标, true);
+            var (iconId, isGameIcon, marker) = r is { iconId: > 0 }
+                ? r.Value
+                : (问号图标, true, string.IsNullOrEmpty(key) ? null : key[..1]);
             var tex = isGameIcon ? IconHelper.GetGameIcon(iconId) : IconHelper.GetActionIcon(iconId);
             if (tex != null)
-                ImGui.Image(tex.Handle, new Vector2(QtListIconSize));
+                ImGui.Image(tex.Handle, new Vector2(图标边长));
             else
-                ImGui.Dummy(new Vector2(QtListIconSize));   // 贴图未就绪当帧占位, 布局不跳
+                ImGui.Dummy(new Vector2(图标边长));   // 贴图未就绪当帧占位, 布局不跳
+            画底部角标(marker, 图标边长);
             if (ImGui.IsItemHovered())
                 ImGui.SetTooltip(key);
 
             ImGui.SameLine(0f, 12f);
+            复选框垂直居中(图标边长, 框边长);
             var visible = s.IsQtVisible(key);
-            if (SettingRow.BareCheckbox("##vis", ref visible, "显示/隐藏（当前模式）"))
+            if (SettingRow.BareCheckbox("##vis", ref visible, "显示/隐藏（当前模式）", 框边长))
                 s.SetQtVisible(key, visible);
 
             ImGui.SameLine(0f, 12f);
+            复选框垂直居中(图标边长, 框边长);
             var def = dict.TryGetValue(key, out var dv) ? dv : Nag0miUIJobEnv.QtDefault(key);
-            if (SettingRow.BareCheckbox("##def", ref def, "默认值开关（当前模式, 勾选即同步实际 QT）"))
+            if (SettingRow.BareCheckbox("##def", ref def, "默认值开关（当前模式, 勾选即同步实际 QT）", 框边长))
             {
                 dict[key] = def;
                 APIHelper.设置QT(key, def);   // 显示的就是当前模式: 立即同步 QT 面板实际状态
@@ -178,6 +205,58 @@ public static class Nag0miUISettingsUI
             s.SaveQtSnapshot(s.ModeIndex);
             s.Save();
             HintHelper.ShowToast2("已用 QT 面板当前状态覆盖本模式默认值", 3, HintHelper.HintType.Info);
+        }
+    }
+
+    // 热键显隐列表：与 QT 列表同一标准——图标 + 首字角标（不显示文字名, 悬浮显全名）,
+    // 图标尺寸跟随热键面板, 复选框同步缩放; 自定义热键另画目标角标（与悬浮面板一致）。
+    // 图标来源优先级与面板相同：游戏内原始图标 id → customIconPath → Action 表动作图标;
+    // 条目缺失（面板尚未构建）退化问号图标。
+    private static void DrawHotkeyVisibilityList(Nag0miUISettings s, ref bool hkRebuild)
+    {
+        var 图标边长 = Nag0miUIHotkeyUI.图标边长;
+        var 框边长 = 复选框边长(图标边长);
+
+        var byName = Nag0miUIHotkeyUI.全部条目?
+            .GroupBy(e => e.Name).ToDictionary(g => g.Key, g => g.First());
+        var 目标角标表 = new Dictionary<string, CustomHotkeyTarget>(s.CustomHotkeys.Count);
+        foreach (var c in s.CustomHotkeys) 目标角标表.TryAdd(c.Name, c.Target);
+
+        foreach (var name in s.GetOrderedHotkeyNames())
+        {
+            ImGui.PushID($"hkrow_{name}");
+
+            var tex = byName == null || !byName.TryGetValue(name, out var entry)
+                ? IconHelper.GetGameIcon(问号图标)
+                : entry.GameIcon != 0
+                    ? Svc.Texture.GetFromGameIcon(new GameIconLookup(entry.GameIcon, itemHq: entry.GameIconHQ)).GetWrapOrDefault(null)
+                    : entry.Hotkey.CustomIconPath != null
+                        ? IconHelper.GetIconFromPath(entry.Hotkey.CustomIconPath)
+                        : IconHelper.GetActionIcon(entry.Hotkey.ActionId);
+            if (tex != null)
+                ImGui.Image(tex.Handle, new Vector2(图标边长));
+            else
+                ImGui.Dummy(new Vector2(图标边长));   // 贴图未就绪当帧占位, 布局不跳
+            var rectMin = ImGui.GetItemRectMin();
+            var rectMax = ImGui.GetItemRectMax();
+            画底部角标(string.IsNullOrEmpty(name) ? null : name[..1], 图标边长);
+            if (目标角标表.TryGetValue(name, out var 角标目标))
+                Nag0miUIHotkeyPanelWindow.DrawTargetBadge(ImGui.GetWindowDrawList(), 角标目标, rectMin, rectMax);
+            if (ImGui.IsItemHovered())
+                ImGui.SetTooltip(name);
+
+            ImGui.SameLine(0f, 12f);
+            复选框垂直居中(图标边长, 框边长);
+            bool shown = !s.HiddenHotkeys.Contains(name);
+            if (SettingRow.BareCheckbox("##vis", ref shown, "显示/隐藏", 框边长))
+            {
+                if (shown) s.HiddenHotkeys.Remove(name);
+                else if (!s.HiddenHotkeys.Contains(name)) s.HiddenHotkeys.Add(name);
+                s.Save();
+                hkRebuild = true;
+            }
+
+            ImGui.PopID();
         }
     }
 

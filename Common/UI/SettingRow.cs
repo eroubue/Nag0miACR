@@ -65,14 +65,15 @@ public static class SettingRow
     }
 
     // 无文字手绘勾选框（紧凑列表用）：仅笔触框 + 墨点勾, 语义由 tooltip 承载; id 需调用方保证作用域内唯一。
-    public static bool BareCheckbox(string id, ref bool value, string? tooltip = null)
+    // boxSize ≤ 0 时用行高（默认）; 列表图标缩放时传与图标联动的边长, 让勾选框同步缩放。
+    public static bool BareCheckbox(string id, ref bool value, string? tooltip = null, float boxSize = 0f)
     {
         var drawList = ImGui.GetWindowDrawList();
         var pos = ImGui.GetCursorScreenPos();
         var frameH = ImGui.GetFrameHeight();
-        var boxSize = frameH;
+        if (boxSize <= 0f) boxSize = frameH;
 
-        var changed = ImGui.InvisibleButton(id, new Vector2(boxSize, frameH));
+        var changed = ImGui.InvisibleButton(id, new Vector2(boxSize));
         if (changed) value = !value;
         var hovered = ImGui.IsItemHovered();
 

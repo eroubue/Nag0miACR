@@ -27,6 +27,9 @@ public sealed class Nag0miUIQtPanelWindow : Window
     private static float 格 => 基准格 * Nag0miUISettings.Instance.QtPanelScalePercent / 100f;
     private static float 间距 => Math.Clamp(Nag0miUISettings.Instance.QtPanelSpacing, 0f, 20f);
 
+    // 瓦片内图标的实际边长（格四边各内缩 2px）：设置页 QT 列表图标跟随此尺寸。
+    public static float 图标边长 => 格 - 4f;
+
     // 右键拖拽实时交换状态（面板级, 一次只拖一格; 左键点击切开关与拖拽完全解耦）
     private int 拖拽源 = -1;
     private Vector2 拖拽偏移;

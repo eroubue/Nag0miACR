@@ -4,7 +4,7 @@ namespace Nag0mi.Common.Data;
 // 并在此处追加对应条目（日期 / 版本 / 内容）。Version 与清单文件中的 version 保持一致。
 public static class AcrChangelog
 {
-    public const string Version = "1.13";
+    public const string Version = "1.14";
 
     public enum LineKind { Add, Remove, Note }
 
@@ -13,6 +13,12 @@ public static class AcrChangelog
 
     public static readonly Entry[] Entries =
     [
+        new("2026-09-22", "1.14",
+        [
+            new(LineKind.Remove, "修复设置悬浮窗 QT 列表图标不显示 marker 角标"),
+            new(LineKind.Note, "QT 列表图标尺寸跟随 QT 面板缩放; QT 面板 100% 基准放大至旧版 120%"),
+            new(LineKind.Add, "热键显隐改为图标+首字角标（跟随热键面板尺寸, 复选框同步缩放, 自定义热键带目标角标）"),
+        ]),
         new("2026-09-22", "1.13",
         [
             new(LineKind.Remove, "修复背景透明度非真实不透明：宣纸贴图自带约75%透明度（冷宣），滑杆拉满仍透出游戏画面；明色模式纸底下垫冷宣实色底，滑杆值即真实不透明度"),
