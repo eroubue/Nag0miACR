@@ -45,6 +45,7 @@ public class WindowBackgroundSettings
     public float BackgroundImageOpacity = 0.3f;
 
     /// 默认宣纸底不透明度 (0-1；0 = 完全无底色，文字悬浮于游戏画面)。
+    /// 真实不透明度：1 = 完全不透明（明色模式垫冷宣实色底托底, 见 ShuimoDraw.DrawPaper）。
     /// 仅默认底色生效；启用自定义背景图时由 BackgroundImageOpacity 接管。
     public float BackgroundOpacity = 1f;
 }

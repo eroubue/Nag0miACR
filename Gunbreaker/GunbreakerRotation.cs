@@ -20,7 +20,7 @@ namespace Nag0mi.Gunbreaker;
 
 // 这个RotationMetadata需要实现！
 
-[RotationMetadata((uint)Job.GNB, "绝枪战士", "Nag0mi", "1.12",
+[RotationMetadata((uint)Job.GNB, "绝枪战士", "Nag0mi", "1.13",
     ContentScope = AcrContentScope.HighEnd)]
 public partial class GunbreakerRotation : IRotation, IRotationLifecycle, IDisposable
 {

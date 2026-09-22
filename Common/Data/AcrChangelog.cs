@@ -4,7 +4,7 @@ namespace Nag0mi.Common.Data;
 // 并在此处追加对应条目（日期 / 版本 / 内容）。Version 与清单文件中的 version 保持一致。
 public static class AcrChangelog
 {
-    public const string Version = "1.12";
+    public const string Version = "1.13";
 
     public enum LineKind { Add, Remove, Note }
 
@@ -13,6 +13,11 @@ public static class AcrChangelog
 
     public static readonly Entry[] Entries =
     [
+        new("2026-09-22", "1.13",
+        [
+            new(LineKind.Remove, "修复背景透明度非真实不透明：宣纸贴图自带约75%透明度（冷宣），滑杆拉满仍透出游戏画面；明色模式纸底下垫冷宣实色底，滑杆值即真实不透明度"),
+            new(LineKind.Note, "三窗口背景不透明度默认值改为不透明（1.0）"),
+        ]),
         new("2026-09-22", "1.12",
         [
             new(LineKind.Add, "设置窗侧边栏重组：面板控制独立分组（含个性化），基础设置分组含循环设置/热键自定义"),

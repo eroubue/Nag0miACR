@@ -51,6 +51,9 @@ public static class ShuimoPalette
 
     // 暗色模式纸底基色（黑底 + 暖宣纹理 50% 透明, 见 ShuimoDraw.DrawPaper）
     public static readonly Vector4 DarkBase = new(0f, 0f, 0f, 1f);
+    // 明色模式纸底基色（冷宣实色, 取 paper_cold 纹理均色 #E3E6EC）：冷宣贴图自带约 75% alpha,
+    // 无实底托底时滑杆拉满也只有约 75% 不透明度; 垫实底后滑杆值即真实不透明度
+    public static readonly Vector4 LightBase = new(0.889f, 0.903f, 0.925f, 1f);
 
     public static Vector4 Hex(uint rgb)
         => new(((rgb >> 16) & 0xFF) / 255f, ((rgb >> 8) & 0xFF) / 255f, (rgb & 0xFF) / 255f, 1f);

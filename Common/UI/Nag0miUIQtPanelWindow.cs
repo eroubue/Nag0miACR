@@ -16,8 +16,8 @@ namespace Nag0mi.Common.UI;
 // 拖动整个面板——瓦片上的点击与拖动按位移阈值区分, 超阈值转拖动后松手不触发开关, 位置落盘。
 public sealed class Nag0miUIQtPanelWindow : Window
 {
-    // 基准格边长(px, 100% 缩放时)
-    private const float 基准格 = 44f;
+    // 基准格边长(px, 100% 缩放时; 52.8 = 初版 44px 的 120%, 以 120% 为新基准 100%)
+    private const float 基准格 = 52.8f;
     // 瓦片圆角
     private const float 圆角 = 8f;
     // 图标解析失败的退化图标（游戏内问号图标）

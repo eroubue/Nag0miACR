@@ -12,6 +12,14 @@ internal static class Nag0miUIHotkeyUI
 {
     private static Nag0miUIHotkeyPanelWindow? window;
 
+    // 最近一次构建的全量热键条目（不受显隐过滤; 设置页「热键显隐」列表取图标用, Uninstall 时清空）
+    internal static IReadOnlyList<(string Name, IHotkey Hotkey, uint GameIcon, bool GameIconHQ)>? 全部条目 { get; private set; }
+
+    // 热键面板图标边长（格子 45px 基准 × 缩放, 与窗口最小格 24px 同口径钳制, 四边各内缩 1px）：
+    // 设置页「热键显隐」列表图标跟随此尺寸。
+    internal static float 图标边长
+        => MathF.Max(24f, 45f * Nag0miUISettings.Instance.HotkeyScalePercent / 100f) - 2f;
+
     // 注册进宿主 HotkeyManager 的影子面板：永不显示，只为时间轴"热键"节点提供
     // GetHotkeyNames/TryExecuteHotkey 的查询与触发能力（含被显隐设置隐藏的条目）。
     private static HotkeyPanel? hostShadow;
@@ -28,6 +36,8 @@ internal static class Nag0miUIHotkeyUI
         // 同时进影子面板, 时间轴热键节点可按名触发
         foreach (var e in Nag0miUISettings.Instance.CustomHotkeys)
             b.Execute(e.Name, new ExecuteLogic(() => CustomHotkeyExecutor.Fire(e)), iconActionID: e.SkillId);
+
+        全部条目 = b.AllEntries;
 
         RegisterHostShadow(b);
 
@@ -46,6 +56,8 @@ internal static class Nag0miUIHotkeyUI
     /// <summary>从宿主 WindowSystem 摘除热键面板并注销影子面板。OnExitAcr 调用。</summary>
     internal static void Uninstall()
     {
+        全部条目 = null;
+
         if (window != null)
         {
             try { PromeRotation.Plugin.Instance?.WindowSystem.RemoveWindow(window); }

@@ -14,6 +14,9 @@ public sealed class Nag0miUIHotkeyBuilder
     /// <summary>构建产物，条目顺序即面板排布顺序。GameIcon 为游戏内原始图标 id（物品等无动作表的条目用），GameIconHQ 表示取 HQ 品质图标。</summary>
     public List<(string Name, IHotkey Hotkey, uint GameIcon, bool GameIconHQ)> Entries { get; } = new();
 
+    // 全量清单（不受显隐过滤, 与 Entries 共享同一 IHotkey 实例）：设置页「热键显隐」列表据此刻画图标。
+    internal List<(string Name, IHotkey Hotkey, uint GameIcon, bool GameIconHQ)> AllEntries { get; } = new();
+
     // 供宿主 HotkeyManager 同步注册的全量清单（不受显隐过滤，时间轴热键节点据此查询/触发）。
     internal List<(string Name, PAction? Action, IHotkeyLogic? Logic, uint IconActionId, string? CustomIconPath)> HostEntries { get; } = new();
 
@@ -27,8 +30,10 @@ public sealed class Nag0miUIHotkeyBuilder
     {
         var action = new PAction(spell, type, target);
         HostEntries.Add((name, action, null, 0, null));
+        var hk = new ActionHotkey(action);
+        AllEntries.Add((name, hk, 0, false));
         if (!hidden.Contains(name))
-            Entries.Add((name, new ActionHotkey(action), 0, false));
+            Entries.Add((name, hk, 0, false));
     }
 
     /// <summary>注册一个自定义逻辑按钮，点击时执行传入的 IHotkeyLogic。</summary>
@@ -39,7 +44,9 @@ public sealed class Nag0miUIHotkeyBuilder
     public void Execute(string name, IHotkeyLogic logic, uint iconActionID = 0, string? customIconPath = null, uint gameIconID = 0, bool gameIconHQ = false)
     {
         HostEntries.Add((name, null, logic, iconActionID, customIconPath));
+        var hk = new DelegateHotkey(logic, iconActionID, customIconPath);
+        AllEntries.Add((name, hk, gameIconID, gameIconHQ));
         if (!hidden.Contains(name))
-            Entries.Add((name, new DelegateHotkey(logic, iconActionID, customIconPath), gameIconID, gameIconHQ));
+            Entries.Add((name, hk, gameIconID, gameIconHQ));
     }
 }

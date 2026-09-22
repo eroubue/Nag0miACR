@@ -75,15 +75,18 @@ public static class ShuimoDraw
     // ============================================================
     // === 宣纸平铺 ===
     // ============================================================
-    // 明=冷宣平铺; 暗=黑底 + 暖宣 50% 透明平铺（对应上游暗色 ricePaper）。
-    // alpha = 调用方面板的背景不透明度（设置页「个性化 → 窗口背景」逐窗可调）;
-    // 暗色黑底同步按 alpha 缩放, 否则暗色模式下调低透明度不生效。调用方负责裁剪。
+    // 明=冷宣实色底 + 冷宣平铺; 暗=黑底 + 暖宣 50% 透明平铺（对应上游暗色 ricePaper）。
+    // alpha = 调用方面板的背景不透明度（设置页「个性化 → 窗口背景」逐窗可调）。
+    // 宣纸贴图自带 alpha（冷宣约 75% / 暖宣 50%），不垫实底时滑杆拉满也达不到不透明;
+    // 实底按 alpha 缩放托底, 滑杆值即窗口背景的真实不透明度（0=完全透出游戏画面, 1=完全不透明）。
+    // 调用方负责裁剪。
     public static void DrawPaper(ImDrawListPtr drawList, Vector2 min, Vector2 max, float alpha)
     {
         var dark = ShuimoPalette.DarkMode;
         var baseAlpha = Math.Clamp(alpha, 0f, 1f);
-        if (dark && baseAlpha > 0f)
-            drawList.AddRectFilled(min, max, SimplePalette.ToU32(ShuimoPalette.WithAlpha(ShuimoPalette.DarkBase, baseAlpha)));
+        if (baseAlpha > 0f)
+            drawList.AddRectFilled(min, max,
+                SimplePalette.ToU32(ShuimoPalette.WithAlpha(dark ? ShuimoPalette.DarkBase : ShuimoPalette.LightBase, baseAlpha)));
 
         var tex = 宣纸;
         if (tex == null || tex.Handle == IntPtr.Zero) return;
