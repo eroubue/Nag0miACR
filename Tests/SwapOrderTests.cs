@@ -24,6 +24,8 @@ internal static class SwapOrderTests
         AnimatePositionConvergesAndSnaps();
         AnimatePositionNeverOvershoots();
         AnimateValueConvergesAndSnaps();
+        ClampKeepsDraggedTileInsideGrid();
+        ClampDegenerateGridReturnsOrigin();
         Console.WriteLine("PASS: slot index mapping, swap semantics, animation convergence");
     }
 
@@ -123,5 +125,29 @@ internal static class SwapOrderTests
         }
         Check.Equal(100f, current);
         Check.Equal(5f, SwapOrderHelper.AnimateValue(5f, 5f, 1f / 60f));
+    }
+
+    // 测试网格 3 列 5 格（2 行）、节距 44 → 可拖范围 [0,88] × [0,44]。
+    private static Vector2 Clamp(Vector2 rel)
+        => SwapOrderHelper.ClampToGrid(rel, Columns, Count, Tile, Spacing);
+
+    private static void ClampKeepsDraggedTileInsideGrid()
+    {
+        Check.Equal(new Vector2(17, 17), Clamp(new Vector2(17, 17)));   // 网格内不动
+        Check.Equal(Vector2.Zero, Clamp(new Vector2(-10, -5)));         // 左/上越界拉回
+        Check.Equal(new Vector2(88, 44), Clamp(new Vector2(200, 100))); // 右/下越界拉回
+        Check.Equal(new Vector2(88, 0), Clamp(new Vector2(500, -50)));  // 对角混合
+        // 单格网格（1 列 1 格）：无论怎么拖都钳在原位。
+        Check.Equal(Vector2.Zero, SwapOrderHelper.ClampToGrid(new Vector2(30, 40), 1, 1, Tile, Spacing));
+        // 列数多于格数时按格数收敛（1 行 → 纵向锁死）。
+        Check.Equal(new Vector2(Pitch * 2, 0),
+            SwapOrderHelper.ClampToGrid(new Vector2(999, 30), Columns, 3, Tile, Spacing));
+    }
+
+    private static void ClampDegenerateGridReturnsOrigin()
+    {
+        Check.Equal(Vector2.Zero, SwapOrderHelper.ClampToGrid(new Vector2(10, 10), 0, Count, Tile, Spacing));
+        Check.Equal(Vector2.Zero, SwapOrderHelper.ClampToGrid(new Vector2(10, 10), Columns, 0, Tile, Spacing));
+        Check.Equal(Vector2.Zero, SwapOrderHelper.ClampToGrid(new Vector2(10, 10), -1, -1, Tile, Spacing));
     }
 }

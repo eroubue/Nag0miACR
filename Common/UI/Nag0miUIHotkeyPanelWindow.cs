@@ -171,7 +171,8 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
 
         if (拖拽源 >= 0 && 拖拽源 < count)
         {
-            var rel = ImGui.GetIO().MousePos - 拖拽偏移 - 原点;
+            // 跟随鼠标但钳制在网格范围内——瓦片不允许拖出窗口外
+            var rel = SwapOrderHelper.ClampToGrid(ImGui.GetIO().MousePos - 拖拽偏移 - 原点, cols, count, tile, spacing);
             动画格位[ordered[拖拽源].Name] = rel;   // 记录源格视觉位置（窗口相对）, 松手提交后从该处平滑回落
             DrawTile(drawList, ordered[拖拽源], 原点 + rel, 原点 + rel + new Vector2(tile), 拖拽源, floating: true);
         }

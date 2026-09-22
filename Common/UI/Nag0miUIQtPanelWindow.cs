@@ -161,7 +161,8 @@ public sealed class Nag0miUIQtPanelWindow : Window
 
         if (拖拽源 >= 0 && 拖拽源 < count)
         {
-            var rel = ImGui.GetIO().MousePos - 拖拽偏移 - 原点;
+            // 跟随鼠标但钳制在网格范围内——瓦片不允许拖出窗口外
+            var rel = SwapOrderHelper.ClampToGrid(ImGui.GetIO().MousePos - 拖拽偏移 - 原点, 每行, count, 格, 间距);
             动画格位[ordered[拖拽源].Id] = rel;   // 记录源格视觉位置（窗口相对）, 松手提交后从该处平滑回落
             画瓦片(ordered[拖拽源], 原点 + rel, locked, 拖拽源);
         }

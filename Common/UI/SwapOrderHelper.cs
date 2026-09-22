@@ -28,6 +28,18 @@ public static class SwapOrderHelper
         return index < count ? index : -1;
     }
 
+    // 拖拽源格的网格相对位置钳制在网格范围内：源格跟随鼠标但不允许拖出窗口外。
+    // 网格范围 = [0, (cols-1)*节距] × [0, (rows-1)*节距]，cols 取列数与格数的小者;
+    // 退化网格（列数或格数非正）返回原点。
+    public static Vector2 ClampToGrid(Vector2 rel, int columns, int count, float tileSize, float spacing)
+    {
+        if (columns <= 0 || count <= 0) return Vector2.Zero;
+        var cols = Math.Min(columns, count);
+        var rows = (count + columns - 1) / columns;
+        var max = new Vector2((cols - 1) * (tileSize + spacing), (rows - 1) * (tileSize + spacing));
+        return Vector2.Clamp(rel, Vector2.Zero, max);
+    }
+
     // 交换语义：顺序表 a、b 两槽位的项互换。自交换或下标越界为 no-op
     // （越界对应拖拽指针落在网格外，SlotIndexFromPosition 返回 -1 的场景）。
     public static void Swap<T>(IList<T> order, int a, int b)

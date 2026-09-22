@@ -4,7 +4,7 @@ namespace Nag0mi.Common.Data;
 // 并在此处追加对应条目（日期 / 版本 / 内容）。Version 与清单文件中的 version 保持一致。
 public static class AcrChangelog
 {
-    public const string Version = "1.7";
+    public const string Version = "1.8";
 
     public enum LineKind { Add, Remove, Note }
 
@@ -13,6 +13,10 @@ public static class AcrChangelog
 
     public static readonly Entry[] Entries =
     [
+        new("2026-09-22", "1.8",
+        [
+            new(LineKind.Remove, "修复右键拖拽排序时瓦片可拖出窗口外的问题：拖拽源格位置钳制在网格范围内（QT面板/热键面板）"),
+        ]),
         new("2026-09-22", "1.7",
         [
             new(LineKind.Add, "设置窗口改为无标题栏：标题挪进侧边栏顶部节点（兼作拖动把手），「面板控制」「基础设置」改为侧边栏基础设置分组下的两个子栏，分组标题可点击跳转"),
