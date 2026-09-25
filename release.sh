@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
-# 发布脚本：版本递增、同步代码内版本号、编译、打包、更新 Nag0mi.json 与 CHANGELOG.md、提交推送、发布 Release
+# 发布脚本：版本递增、同步代码内版本号、编译、打包、更新 Nag0mi.json / repo.json 与 CHANGELOG.md、提交推送、发布 Release
 # 用法: ./release.sh -m "改动摘要" [-m "另一条摘要"] [-v 1.2]
 #   -m  改动摘要（可多次，至少一条）。前缀 "+ " 记为新增、"- " 记为移除/修复、无前缀为说明；
 #       同步写入 AcrChangelog.cs 条目与 CHANGELOG.md，并作为提交正文与 Release notes
 #   -v  显式指定版本号；缺省在 Nag0mi.json 当前版本末位递增（1.1 -> 1.2）
 #   版本号同步位置：Nag0mi.json、GunbreakerRotation.cs（RotationMetadata）、AcrChangelog.cs（Version 与条目）
+#   repo.json：仓库订阅清单，内容同 Nag0mi.json，downloadUrl 固定为 releases/latest/download/Nag0mi.zip，
+#              随 Release 一并上传，订阅地址为 releases/latest/download/repo.json
 set -euo pipefail
 cd "$(dirname "$0")"
 REPO_WIN=$(pwd -W)
@@ -137,6 +139,12 @@ grep -q "\"version\": \"$VERSION\"" Nag0mi.json || { echo "错误: version 写�
 grep -q "\"sha256\": \"$SHA\"" Nag0mi.json || { echo "错误: sha256 写入失败" >&2; exit 1; }
 echo "==> Nag0mi.json 已更新 (sha256=$SHA)"
 
+# 5.5 生成 repo.json：内容同 Nag0mi.json，downloadUrl 固定为 latest 链接（订阅地址稳定）
+REPO_URL="https://github.com/eroubue/Nag0miACR/releases/latest/download/Nag0mi.zip"
+sed "s#^\(\s*\)\"downloadUrl\": \"[^\"]*\"#\1\"downloadUrl\": \"$REPO_URL\"#" Nag0mi.json > repo.json
+grep -q "\"downloadUrl\": \"$REPO_URL\"" repo.json || { echo "错误: repo.json 生成失败" >&2; exit 1; }
+echo "==> repo.json 已生成 (downloadUrl=$REPO_URL)"
+
 # 6. 更新 CHANGELOG.md：新条目插入首个版本标题之前
 printf -v ENTRY '## %s（%s）\n\n%s' "$VERSION" "$DATE" "$BULLETS"
 python - "$ENTRY" <<'PY'
@@ -157,10 +165,10 @@ git add -A
 git commit -m "发布 $TAG" -m "$BULLETS"
 git push
 
-# 8. 发布 GitHub Release（sha256 对应的同一份 zip）
+# 8. 发布 GitHub Release（sha256 对应的同一份 zip，并附 repo.json 订阅清单）
 if command -v gh >/dev/null 2>&1; then
   echo "==> 发布 Release $TAG"
-  gh release create "$TAG" Nag0mi.zip --title "$TAG" --notes "$BULLETS"
+  gh release create "$TAG" Nag0mi.zip repo.json --title "$TAG" --notes "$BULLETS"
   echo "==> 完成: $TAG 已发布"
 else
   cat <<EOF
@@ -169,6 +177,7 @@ else
     标签:  $TAG（基于 main 最新提交新建）
     标题:  $TAG
     附件:  $REPO_WIN/Nag0mi.zip
+           $REPO_WIN/repo.json
     备注:
 $BULLETS
 EOF

@@ -32,7 +32,7 @@
 2. `Gunbreaker/GunbreakerRotation.cs` 中 `RotationMetadata` 的第 4 个实参（宿主识别的 ACR 版本）；
 3. `Common/Data/AcrChangelog.cs` 的 `Version` 常量，并在 `Entries` 顶部追加本版本条目（最新版本在最前，设置页「更新日志」页签显示）。
 
-脚本依次完成：计算新版本号 → 同步代码内版本号（`GunbreakerRotation.cs` 与 `AcrChangelog.cs`）→ `dotnet build Nag0mi.csproj -c Release` → 将编译输出目录打包为 `Nag0mi.zip`（`Nag0mi/` 根结构，含 dll/deps.json/UI，排除 `*.pdb`）→ 更新 `Nag0mi.json` 的 `version`/`downloadUrl`/`sha256` → 在 `CHANGELOG.md` 顶部插入本版本条目 → 提交并推送 → 发布 GitHub Release（无 `gh` 时打印手动发布所需参数）。
+脚本依次完成：计算新版本号 → 同步代码内版本号（`GunbreakerRotation.cs` 与 `AcrChangelog.cs`）→ `dotnet build Nag0mi.csproj -c Release` → 将编译输出目录打包为 `Nag0mi.zip`（`Nag0mi/` 根结构，含 dll/deps.json/UI，排除 `*.pdb`）→ 更新 `Nag0mi.json` 的 `version`/`downloadUrl`/`sha256` → 生成 `repo.json`（内容同 `Nag0mi.json`，`downloadUrl` 固定为 `releases/latest/download/Nag0mi.zip`，作为仓库订阅清单一并提交并随 Release 上传，订阅地址为 `releases/latest/download/repo.json`）→ 在 `CHANGELOG.md` 顶部插入本版本条目 → 提交并推送 → 发布 GitHub Release（附件为 `Nag0mi.zip` 与 `repo.json`；无 `gh` 时打印手动发布所需参数）。
 
 **约束**：`sha256` 对应最终上传 Release 的同一份 zip；脚本中断时按上述顺序手动补齐剩余步骤。
 
