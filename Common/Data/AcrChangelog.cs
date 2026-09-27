@@ -4,7 +4,7 @@ namespace Nag0mi.Common.Data;
 // 并在此处追加对应条目（日期 / 版本 / 内容）。Version 与清单文件中的 version 保持一致。
 public static class AcrChangelog
 {
-    public const string Version = "1.16";
+    public const string Version = "1.17";
 
     public enum LineKind { Add, Remove, Note }
 
@@ -13,6 +13,11 @@ public static class AcrChangelog
 
     public static readonly Entry[] Entries =
     [
+        new("2026-09-27", "1.17",
+        [
+            new(LineKind.Add, "满编进入五个绝境战地图时自动切高难模式并关闭停手/自动攻击"),
+            new(LineKind.Add, "加载时间轴后自动切高难模式并关闭停手/自动攻击"),
+        ]),
         new("2026-09-26", "1.16",
         [
             new(LineKind.Add, "发布流程新增 repo.json 订阅清单（随 Release 发布，latest 固定链接）"),

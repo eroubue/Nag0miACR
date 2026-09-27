@@ -20,7 +20,7 @@ namespace Nag0mi.Gunbreaker;
 
 // 这个RotationMetadata需要实现！
 
-[RotationMetadata((uint)Job.GNB, "绝枪战士", "Nag0mi", "1.16",
+[RotationMetadata((uint)Job.GNB, "绝枪战士", "Nag0mi", "1.17",
     ContentScope = AcrContentScope.HighEnd)]
 public partial class GunbreakerRotation : IRotation, IRotationLifecycle, IDisposable
 {
@@ -53,7 +53,7 @@ public partial class GunbreakerRotation : IRotation, IRotationLifecycle, IDispos
     public void Dispose() => OnExitAcr();
 
     // 创建一个属于该职业的回调
-    private readonly IRotationEventHandler _eventHandler = new GunbreakerRotationEventHandler();
+    private readonly IRotationEventHandler _eventHandler;
     public IRotationEventHandler GetEventHandler() => _eventHandler;
     
     // 管理该职业所有的决策解析器
@@ -81,6 +81,7 @@ public partial class GunbreakerRotation : IRotation, IRotationLifecycle, IDispos
     
     public GunbreakerRotation()
     {
+        _eventHandler = new GunbreakerRotationEventHandler(this);
         // 向 Nag0miUI 框架注入本职业全部环境（QT 表、热键、模式、图标解析、设置页注入）
         ConfigureUi();
         // 按照优先级从高到低的顺序，注册所有的求解器
