@@ -10,11 +10,15 @@ internal enum SnapSide
     Right,
 }
 
-internal sealed record OverlayPlacement
+// 值类型记录：控制条每帧构造（Placement getter / Capture），避免逐帧堆分配。
+// 属性用 init 保持 object-initializer 用法兼容；调用处无 null 判断/引用比较，语义不变。
+internal readonly record struct OverlayPlacement
 {
-    public SnapSide Side { get; set; } = SnapSide.Right;
-    public float RelativeX { get; set; } = 1;
-    public float RelativeY { get; set; } = 0.5f;
+    public OverlayPlacement() { }
+
+    public SnapSide Side { get; init; } = SnapSide.Right;
+    public float RelativeX { get; init; } = 1;
+    public float RelativeY { get; init; } = 0.5f;
 }
 
 internal static class OverlayGeometry

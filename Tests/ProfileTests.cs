@@ -7,6 +7,9 @@ internal static class ProfileTests
 {
     public static void Run()
     {
+        CapturePreservesUnchangedSnapshot();
+        CaptureDetectsEachParameter();
+
         foreach (var disabled in new[] { false, true })
         foreach (var held in new[] { false, true })
         {
@@ -131,7 +134,7 @@ internal static class ProfileTests
 
             var legacy = migratedStore.LegacyUi!;
             Check.True(legacy != null);
-            Check.Equal(8, legacy.QtPanelColumns!.Value);
+            Check.Equal(8, legacy!.QtPanelColumns!.Value);
             Check.Near(12.5f, legacy.QtPanelSpacing!.Value);
             Check.Near(1.5f, legacy.QtPanelScale!.Value);
             Check.True(legacy.QtPanelLockOrder);
@@ -175,5 +178,54 @@ internal static class ProfileTests
             Console.WriteLine("PASS: save/reload, v1/v2 migration with legacy UI extraction, invalid JSON/values backed up and recovered");
         }
         finally { Directory.Delete(directory, true); }
+    }
+
+    private static void CapturePreservesUnchangedSnapshot()
+    {
+        var settings = new GunbreakerSettings();
+        var profiles = GunbreakerProfiles.Create(settings);
+        var snapshot = profiles.Config.HighEnd.Parameters;
+        profiles.Capture(settings);
+        var allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+        for (var i = 0; i < 256; i++)
+        {
+            Check.True(!profiles.Capture(settings));
+            Check.True(ReferenceEquals(snapshot, profiles.Config.HighEnd.Parameters),
+                "Unchanged parameters must retain the same snapshot instance");
+        }
+        Check.Equal(0L, GC.GetAllocatedBytesForCurrentThread() - allocatedBefore);
+        Console.WriteLine("PASS: unchanged parameter capture retains snapshot reference");
+    }
+
+    private static void CaptureDetectsEachParameter()
+    {
+        (string Name, Action<GunbreakerSettings> Change)[] changes =
+        [
+            (nameof(GunbreakerParameters.Debug), s => s.debug = true),
+            (nameof(GunbreakerParameters.SingleTarget), s => s.ST = false),
+            (nameof(GunbreakerParameters.ReservedAmmo), s => s.保留子弹数 = 2),
+            (nameof(GunbreakerParameters.WorkMode), s => s.当前工作模式 = GunbreakerSettings.工作模式枚举.日常模式),
+            (nameof(GunbreakerParameters.PullMethod), s => s.开怪方式 = GunbreakerSettings.起手方式枚举.闪雷弹),
+            (nameof(GunbreakerParameters.PullAdvanceMs), s => s.开怪提前时间 = 1700),
+            (nameof(GunbreakerParameters.Opener), s => s.起手选择 = GunbreakerSettings.起手选择枚举.无情2g起手),
+            (nameof(GunbreakerParameters.DashOpener), s => s.突进起手 = false),
+        ];
+        foreach (var (name, change) in changes)
+        {
+            var settings = new GunbreakerSettings();
+            var profiles = GunbreakerProfiles.Create(settings);
+            var original = profiles.Config.HighEnd.Parameters;
+            change(settings);
+            Check.True(profiles.Capture(settings), $"Changing {name} must dirty the profile");
+            var changed = profiles.Config.HighEnd.Parameters;
+            Check.True(!ReferenceEquals(original, changed), $"Changing {name} must replace the snapshot");
+            Check.Equal(GunbreakerParameters.Capture(settings), changed);
+            Check.True(!profiles.Capture(settings));
+            Check.True(ReferenceEquals(changed, profiles.Config.HighEnd.Parameters));
+            original.Apply(settings);
+            Check.True(profiles.Capture(settings), $"Restoring {name} must dirty the profile");
+            Check.Equal(original, profiles.Config.HighEnd.Parameters);
+        }
+        Console.WriteLine("PASS: each parameter change and restoration updates the snapshot");
     }
 }

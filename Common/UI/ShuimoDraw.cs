@@ -175,12 +175,18 @@ public static class ShuimoDraw
     // === 山水装饰层（设置窗非交互背景: 纸底之上、内容之下） ===
     // ============================================================
     // 五张山水: lf=左上 lm=左中 mlb=中下 rb=右下 rf=右远（定位语义与上游 ricePaper 一致）;
-    // 暗色模式用暗色变体贴图。
+    // 暗色模式用暗色变体贴图。文件名按明/暗主题预生成两组（主题切换即换组, 无需失效处理），
+    // 避免每帧插值分配。
     // alphaScale 跟随纸底不透明度, 纸底调淡时装饰层同比例淡出
+    private static readonly string[] 山水键明 =
+        ["mtn_lf.png", "mtn_lm.png", "mtn_mlb.png", "mtn_rb.png", "mtn_rf.png"];
+    private static readonly string[] 山水键暗 =
+        ["mtn_lf_d.png", "mtn_lm_d.png", "mtn_mlb_d.png", "mtn_rb_d.png", "mtn_rf_d.png"];
+
     public static void DrawMountains(ImDrawListPtr drawList, Vector2 min, Vector2 max, float alphaScale = 1f)
     {
         var dark = ShuimoPalette.DarkMode;
-        var suf = dark ? "_d" : "";
+        var keys = dark ? 山水键暗 : 山水键明;
         // 装饰层透明度：纸底之上隐约可见即可, 不抢内容可读性
         var alpha = (dark ? 0.60f : 0.50f) * Math.Clamp(alphaScale, 0f, 1f);
         var tint = SimplePalette.ToU32(new Vector4(1f, 1f, 1f, alpha));
@@ -188,9 +194,9 @@ public static class ShuimoDraw
         var h = max.Y - min.Y;
 
         // lf 左上
-        DrawMtn(drawList, Tex($"mtn_lf{suf}.png"), min, tint, w * 0.42f);
+        DrawMtn(drawList, Tex(keys[0]), min, tint, w * 0.42f);
         // lm 左中（左边垂直居中偏上）
-        var lm = Tex($"mtn_lm{suf}.png");
+        var lm = Tex(keys[1]);
         if (lm != null)
         {
             var lw = w * 0.62f;
@@ -199,7 +205,7 @@ public static class ShuimoDraw
             drawList.AddImage(lm.Handle, pos, pos + new Vector2(lw, lh), Vector2.Zero, Vector2.One, tint);
         }
         // mlb 中下（底部, 横向居中偏左）
-        var mlb = Tex($"mtn_mlb{suf}.png");
+        var mlb = Tex(keys[2]);
         if (mlb != null)
         {
             var mw = w * 0.80f;
@@ -208,7 +214,7 @@ public static class ShuimoDraw
             drawList.AddImage(mlb.Handle, pos, pos + new Vector2(mw, mh), Vector2.Zero, Vector2.One, tint);
         }
         // rb 右下
-        var rb = Tex($"mtn_rb{suf}.png");
+        var rb = Tex(keys[3]);
         if (rb != null)
         {
             var rw = w * 0.72f;
@@ -217,7 +223,7 @@ public static class ShuimoDraw
             drawList.AddImage(rb.Handle, pos, pos + new Vector2(rw, rh), Vector2.Zero, Vector2.One, tint);
         }
         // rf 右远（右侧, 位于 rb 上方）
-        var rf = Tex($"mtn_rf{suf}.png");
+        var rf = Tex(keys[4]);
         if (rf != null)
         {
             var fw = w * 0.50f;

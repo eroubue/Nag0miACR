@@ -24,6 +24,11 @@ public abstract partial class SettingsWindowBase
 
     private readonly Dictionary<string, TabAnimState> tabAnims = new();
     private HashSet<string>? prevTabLabels;
+    // 上帧页签数组引用：引用未变即内容未变（与 AllTabs 的 ReferenceEquals 口径一致），
+    // 失效动画清理与 prevTabLabels 重建只在页签变化时执行
+    private string[]? prevLabelsRef;
+    // 行动画状态缓冲（与 labels 同序）：第一趟循环登记, 第二趟直接取用, 省去二次字典索引
+    private TabAnimState[] rowStates = [];
 
     // 出现/收起动效时长（秒）
     private const float TabAnimDuration = 0.22f;
@@ -84,6 +89,9 @@ public abstract partial class SettingsWindowBase
 
                 // 首帧全部直接落位，不做入场动画
                 prevTabLabels ??= new HashSet<string>(labels);
+                var labelsChanged = !ReferenceEquals(prevLabelsRef, labels);
+                if (rowStates.Length != labels.Length)
+                    Array.Resize(ref rowStates, labels.Length);
 
                 // 出现走展开动效; 收起直接消失（不保留淡出项, 不推挤下方按钮）
                 for (var i = 0; i < labels.Length; i++)
@@ -97,19 +105,24 @@ public abstract partial class SettingsWindowBase
                             起始时刻 = now,
                         };
                     st.LastIndex = i;
+                    rowStates[i] = st;
                     推进TabAnim(st, 1f, now);
                 }
-                var dead = tabAnims.Where(kv => Array.IndexOf(labels, kv.Key) < 0).Select(kv => kv.Key).ToList();
-                foreach (var key in dead) tabAnims.Remove(key);
-
-                prevTabLabels = new HashSet<string>(labels);
+                if (labelsChanged)
+                {
+                    prevTabLabels.Clear();
+                    prevTabLabels.UnionWith(labels);
+                    var dead = tabAnims.Where(kv => !prevTabLabels.Contains(kv.Key)).Select(kv => kv.Key).ToList();
+                    foreach (var key in dead) tabAnims.Remove(key);
+                    prevLabelsRef = labels;
+                }
 
                 var drawn = 0;
                 string? prevGroup = null;
                 for (var i = 0; i < labels.Length; i++)
                 {
                     var label = labels[i];
-                    var t = tabAnims[label].T;
+                    var t = rowStates[i].T;
                     if (t <= 0f) continue;
 
                     // 分组标题（可点击：跳转组内首个子栏; 透明底 + 次级文字色, 悬停淡染）

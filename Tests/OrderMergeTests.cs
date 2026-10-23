@@ -9,6 +9,7 @@ internal static class OrderMergeTests
     public static void Run()
     {
         EmptyStoredOrderYieldsDefinitionOrder();
+        EmptyStoredOrderDeduplicatesDefinitionKeys();
         StoredOrderFirstThenNewKeysAppended();
         StaleAndDuplicateStoredKeysDropped();
         MoveWithinVisibleReordersVisibleSlots();
@@ -28,6 +29,13 @@ internal static class OrderMergeTests
         // 存过的键按其顺序在前，定义表新增键（子弹连/血壤）按定义顺序补尾。
         var merged = OrderMergeHelper.MergeOrder(new[] { "爆发", "无情" }, All);
         Check.True(merged.SequenceEqual(new[] { "爆发", "无情", "子弹连", "血壤" }));
+    }
+
+    private static void EmptyStoredOrderDeduplicatesDefinitionKeys()
+    {
+        // 内置热键和配置中的自定义热键可能同名，仍只显示首次出现的条目。
+        Check.True(OrderMergeHelper.MergeOrder([], new[] { "挑衅", "铁壁", "挑衅" })
+            .SequenceEqual(new[] { "挑衅", "铁壁" }));
     }
 
     private static void StaleAndDuplicateStoredKeysDropped()

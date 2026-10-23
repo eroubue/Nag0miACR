@@ -208,6 +208,11 @@ public static class Nag0miUISettingsUI
         }
     }
 
+    // 热键显隐列表的条目索引缓存：按 全部条目 引用失效（Rebuild 换引用, Uninstall 置 null），
+    // 内容（按名分组取首条）与逐帧重建完全一致
+    private static IReadOnlyList<(string Name, PromeRotation.UI.HotKey.IHotkey Hotkey, uint GameIcon, bool GameIconHQ)>? 条目索引源;
+    private static Dictionary<string, (string Name, PromeRotation.UI.HotKey.IHotkey Hotkey, uint GameIcon, bool GameIconHQ)>? 条目索引缓存;
+
     // 热键显隐列表：图标行（不显示文字名, 悬浮显全名）, 显示与热键面板完全一致——
     // 角标只有自定义热键的目标角标, 面板没有的角标这里也不画;
     // 图标尺寸跟随热键面板, 复选框同步缩放。
@@ -218,8 +223,13 @@ public static class Nag0miUISettingsUI
         var 图标边长 = Nag0miUIHotkeyUI.图标边长;
         var 框边长 = 复选框边长(图标边长);
 
-        var byName = Nag0miUIHotkeyUI.全部条目?
-            .GroupBy(e => e.Name).ToDictionary(g => g.Key, g => g.First());
+        var 全部条目 = Nag0miUIHotkeyUI.全部条目;
+        if (!ReferenceEquals(全部条目, 条目索引源))
+        {
+            条目索引源 = 全部条目;
+            条目索引缓存 = 全部条目?.GroupBy(e => e.Name).ToDictionary(g => g.Key, g => g.First());
+        }
+        var byName = 条目索引缓存;
         var 目标角标表 = new Dictionary<string, CustomHotkeyTarget>(s.CustomHotkeys.Count);
         foreach (var c in s.CustomHotkeys) 目标角标表.TryAdd(c.Name, c.Target);
 
@@ -305,6 +315,13 @@ public static class Nag0miUISettingsUI
     private static int _自定义技能索引;
     private static int _自定义目标索引;
 
+    // 技能/目标下拉名表缓存：技能清单按注入数组引用失效（Configure 每次注入新引用）;
+    // 目标清单源 CustomHotkeyTargets.Selectable 为静态只读数组, 名表一次性构建
+    private static (uint Id, string Name, PromeRotation.Data.ActionType Type)[]? 技能清单源;
+    private static string[]? 技能名缓存;
+    private static readonly string[] 目标名表 =
+        CustomHotkeyTargets.Selectable.Select(CustomHotkeyTargets.Label).ToArray();
+
     // 自定义热键管理小节：职业未注入技能清单时不显示。
     private static void DrawCustomHotkeys(Nag0miUISettings s)
     {
@@ -313,9 +330,14 @@ public static class Nag0miUISettingsUI
 
         Hdr("自定义热键");
 
-        var skillNames = skills.Select(k => k.Name).ToArray();
+        if (!ReferenceEquals(skills, 技能清单源))
+        {
+            技能清单源 = skills;
+            技能名缓存 = skills.Select(k => k.Name).ToArray();
+        }
+        var skillNames = 技能名缓存!;
         var targets = CustomHotkeyTargets.Selectable;
-        var targetNames = targets.Select(CustomHotkeyTargets.Label).ToArray();
+        var targetNames = 目标名表;
         _自定义技能索引 = Math.Clamp(_自定义技能索引, 0, skillNames.Length - 1);
         _自定义目标索引 = Math.Clamp(_自定义目标索引, 0, targets.Length - 1);
         SettingRow.Combo("自定义技能", ref _自定义技能索引, skillNames);

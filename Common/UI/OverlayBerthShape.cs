@@ -26,7 +26,33 @@ internal static class OverlayBerthShape
 
     // 轮廓点列（加 offset 后的坐标；贴边侧按 x=0 构造，mirror 时 x 镜像到对侧）。
     // 点列从贴边中点起绕行一圈——起点保证轮廓对其星形可见，PathFillConvex 扇形填充精确。
+    // memo：控制条每帧调用，输入（t/mirror/scale/offset 的 float 位值）未变时复用上帧点列;
+    // 调用方只读（PathLineTo / CollectionsMarshal.AsSpan 绘制），不回写点列。
+    private static int memoT = int.MinValue, memoScale = int.MinValue, memoOffX = int.MinValue, memoOffY = int.MinValue;
+    private static bool memoMirror;
+    private static List<Vector2>? memoPts;
+
     public static List<Vector2> BuildOutline(float t, bool mirror, float scale, Vector2 offset)
+    {
+        var tBits = BitConverter.SingleToInt32Bits(t);
+        var scaleBits = BitConverter.SingleToInt32Bits(scale);
+        var offXBits = BitConverter.SingleToInt32Bits(offset.X);
+        var offYBits = BitConverter.SingleToInt32Bits(offset.Y);
+        if (memoPts != null
+            && memoT == tBits && memoMirror == mirror && memoScale == scaleBits
+            && memoOffX == offXBits && memoOffY == offYBits)
+            return memoPts;
+        var pts = BuildOutlineCore(t, mirror, scale, offset);
+        memoT = tBits;
+        memoMirror = mirror;
+        memoScale = scaleBits;
+        memoOffX = offXBits;
+        memoOffY = offYBits;
+        memoPts = pts;
+        return pts;
+    }
+
+    private static List<Vector2> BuildOutlineCore(float t, bool mirror, float scale, Vector2 offset)
     {
         t = Math.Clamp(t, 0f, 1f);
         var w = Width * scale;

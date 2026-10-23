@@ -25,6 +25,12 @@ internal sealed record GunbreakerParameters
         DashOpener = source.突进起手,
     };
 
+    public bool Matches(GunbreakerSettings source) =>
+        Debug == source.debug && SingleTarget == source.ST
+        && ReservedAmmo == source.保留子弹数 && WorkMode == source.当前工作模式
+        && PullMethod == source.开怪方式 && PullAdvanceMs == source.开怪提前时间
+        && Opener == source.起手选择 && DashOpener == source.突进起手;
+
     public void Apply(GunbreakerSettings target)
     {
         target.debug = Debug;

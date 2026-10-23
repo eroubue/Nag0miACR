@@ -152,10 +152,47 @@ public class Nag0miUISettings
     // === QT 排列顺序（悬浮面板 / 各设置页统一取此顺序） ===
     // ============================================================
 
+    // 排序合并结果缓存（面板/设置页每帧读取）：源数据（存储顺序列表引用+长度、职业注入表引用）
+    // 任一变化即重建——现有全部写入点（赋值替换 / Add / Remove / RemoveAt / RemoveAll）都会改变
+    // 引用或长度，无需逐点显式失效。返回内部缓存实例，调用方一律只读。
+    private List<string>? orderedQtCache;
+    private List<string>? orderedQtStored;
+    private int orderedQtStoredCount = -1;
+    private object? orderedQtSource;
+    // 排序 rank 表（键 → 位次），悬浮面板按自定义顺序排序用；随排序缓存一并重建
+    private Dictionary<string, int>? orderedQtRank;
+
     // 当前职业 QT 键的显示顺序：QtOrder 中仍有效的键按其顺序在前,
     // QT 表新增的键按定义顺序补尾; QtOrder 为空时即 QT 表定义顺序（与旧版行为一致）。
     public List<string> GetOrderedQtKeys()
-        => OrderMergeHelper.MergeOrder(QtOrder, Nag0miUIJobEnv.QtAll.Keys);
+    {
+        var stored = QtOrder;
+        var all = Nag0miUIJobEnv.QtAll;
+        if (orderedQtCache == null
+            || !ReferenceEquals(orderedQtStored, stored) || orderedQtStoredCount != stored.Count
+            || !ReferenceEquals(orderedQtSource, all))
+        {
+            orderedQtCache = OrderMergeHelper.MergeOrder(stored, all.Keys);
+            orderedQtRank = null;
+            orderedQtStored = stored;
+            orderedQtStoredCount = stored.Count;
+            orderedQtSource = all;
+        }
+        return orderedQtCache;
+    }
+
+    // GetOrderedQtKeys 结果的 rank 表（键 → 位次），缓存复用
+    internal IReadOnlyDictionary<string, int> GetQtOrderRank()
+    {
+        var order = GetOrderedQtKeys();
+        if (orderedQtRank == null)
+        {
+            var rank = new Dictionary<string, int>(order.Count);
+            for (var i = 0; i < order.Count; i++) rank[order[i]] = i;
+            orderedQtRank = rank;
+        }
+        return orderedQtRank;
+    }
 
     // 把指定 QT 移动到面板上的目标位置（插入语义）。
     // 目标索引按面板当前显示的格子计数，被隐藏的键不占格子；隐藏键留在原槽位，
@@ -178,12 +215,53 @@ public class Nag0miUISettings
     // === 热键排列顺序（悬浮面板 / 热键设置页统一取此顺序） ===
     // ============================================================
 
+    // 热键排序合并结果缓存：判定口径同 QT（HotkeyOrder 与 CustomHotkeys 的引用+长度、
+    // 职业注入热键名表引用），缓存命中时一并消除 Concat/Select 链的分配
+    private List<string>? orderedHotkeyCache;
+    private List<string>? orderedHotkeyStored;
+    private int orderedHotkeyStoredCount = -1;
+    private List<CustomHotkeyEntry>? orderedHotkeyCustoms;
+    private int orderedHotkeyCustomsCount = -1;
+    private object? orderedHotkeySource;
+    // 排序 rank 表（名字 → 位次），悬浮面板按自定义顺序排序用；随排序缓存一并重建
+    private Dictionary<string, int>? orderedHotkeyRank;
+
     // 当前职业热键名的显示顺序：HotkeyOrder 中仍有效的名字按其顺序在前,
     // 热键表新增的名字按定义顺序补尾; HotkeyOrder 为空时即热键表定义顺序（与旧版行为一致）。
     // 全集 = 职业内置热键 + 自定义热键（按添加顺序补尾）。
     public List<string> GetOrderedHotkeyNames()
-        => OrderMergeHelper.MergeOrder(HotkeyOrder,
-            Nag0miUIJobEnv.HotkeyNames.Concat(CustomHotkeys.Select(c => c.Name)));
+    {
+        var stored = HotkeyOrder;
+        var customs = CustomHotkeys;
+        var names = Nag0miUIJobEnv.HotkeyNames;
+        if (orderedHotkeyCache == null
+            || !ReferenceEquals(orderedHotkeyStored, stored) || orderedHotkeyStoredCount != stored.Count
+            || !ReferenceEquals(orderedHotkeyCustoms, customs) || orderedHotkeyCustomsCount != customs.Count
+            || !ReferenceEquals(orderedHotkeySource, names))
+        {
+            orderedHotkeyCache = OrderMergeHelper.MergeOrder(stored, names.Concat(customs.Select(c => c.Name)));
+            orderedHotkeyRank = null;
+            orderedHotkeyStored = stored;
+            orderedHotkeyStoredCount = stored.Count;
+            orderedHotkeyCustoms = customs;
+            orderedHotkeyCustomsCount = customs.Count;
+            orderedHotkeySource = names;
+        }
+        return orderedHotkeyCache;
+    }
+
+    // GetOrderedHotkeyNames 结果的 rank 表（名字 → 位次），缓存复用
+    internal IReadOnlyDictionary<string, int> GetHotkeyOrderRank()
+    {
+        var order = GetOrderedHotkeyNames();
+        if (orderedHotkeyRank == null)
+        {
+            var rank = new Dictionary<string, int>(order.Count);
+            for (var i = 0; i < order.Count; i++) rank[order[i]] = i;
+            orderedHotkeyRank = rank;
+        }
+        return orderedHotkeyRank;
+    }
 
     // 把指定热键移动到面板上的目标位置（插入语义），索引口径与 MoveQt 相同：
     // 按面板当前显示的格子计数，被隐藏的名字不占格子。面板每帧按此顺序重排，落盘即可。

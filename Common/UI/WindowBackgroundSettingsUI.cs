@@ -8,6 +8,10 @@ namespace Nag0mi.Common.UI;
 // 改动即时生效（下一帧绘制即用新背景）, 改动后经 saveAction 落盘。
 public static class WindowBackgroundSettingsUI
 {
+    // 透明度快速设置表：内容固定，提升为静态避免每帧重建
+    private static readonly (string Label, float Opacity)[] 透明度快速设置 =
+        [("10%", 0.1f), ("30%", 0.3f), ("50%", 0.5f), ("70%", 0.7f), ("100%", 1.0f)];
+
     /// <summary>绘制单个窗口的背景设置（折叠节）。</summary>
     public static void DrawWindowBackgroundSettings(string windowName, WindowBackgroundSettings settings, Action? saveAction = null)
     {
@@ -76,7 +80,7 @@ public static class WindowBackgroundSettingsUI
                     saveAction?.Invoke();
 
                 ImGui.Text("快速设置:");
-                foreach (var (label, opacity) in new[] { ("10%", 0.1f), ("30%", 0.3f), ("50%", 0.5f), ("70%", 0.7f), ("100%", 1.0f) })
+                foreach (var (label, opacity) in 透明度快速设置)
                 {
                     ImGui.SameLine();
                     if (ImGui.SmallButton(label))

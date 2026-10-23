@@ -10,6 +10,9 @@ internal static class OrderMergeHelper
     public static List<string> MergeOrder(IEnumerable<string> storedOrder, IEnumerable<string> allKeys)
     {
         var all = allKeys as ICollection<string> ?? allKeys.ToList();
+        // 空序无需构建有效键集合；全集仍可能含同名热键，保留首次出现的顺序。
+        if (storedOrder is ICollection<string> { Count: 0 })
+            return all.Distinct().ToList();
         var valid = new HashSet<string>(all);
         var result = new List<string>(all.Count);
         var seen = new HashSet<string>();

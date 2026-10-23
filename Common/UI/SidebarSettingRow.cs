@@ -45,7 +45,10 @@ public static class SidebarSettingRow
     {
         HideDragButtonsPush();
         ImGui.SetNextItemWidth(SettingRow.InputWidth);
-        var changed = ImGui.DragInt($"##{label}", ref value, 1f, min, max);
+        // 控件 ID 走 PushID(label) + 常量名：与 "##label" 同效（同作用域内 label 唯一即不撞 ID），省每帧拼接
+        ImGui.PushID(label);
+        var changed = ImGui.DragInt("##drag", ref value, 1f, min, max);
+        ImGui.PopID();
         HideDragButtonsPop();
         if (changed) value = Math.Clamp(value, min, max);
         ShowTooltipIfHovered(tooltip);
@@ -59,7 +62,9 @@ public static class SidebarSettingRow
     {
         HideDragButtonsPush();
         ImGui.SetNextItemWidth(SettingRow.InputWidth);
-        var changed = ImGui.DragInt($"##{label}", ref value, step, min, max);
+        ImGui.PushID(label);
+        var changed = ImGui.DragInt("##drag", ref value, step, min, max);
+        ImGui.PopID();
         HideDragButtonsPop();
         if (changed) value = Math.Clamp(value, min, max) / step * step;
         ShowTooltipIfHovered(tooltip);
@@ -72,7 +77,9 @@ public static class SidebarSettingRow
     {
         HideDragButtonsPush();
         ImGui.SetNextItemWidth(SettingRow.InputWidth);
-        var changed = ImGui.DragFloat($"##{label}", ref value, 0.1f, min, max, format);
+        ImGui.PushID(label);
+        var changed = ImGui.DragFloat("##drag", ref value, 0.1f, min, max, format);
+        ImGui.PopID();
         HideDragButtonsPop();
         if (changed) value = Math.Clamp(value, min, max);
         ShowTooltipIfHovered(tooltip);
@@ -84,7 +91,9 @@ public static class SidebarSettingRow
     public static bool Combo(string label, ref int currentIndex, string[] items, string? tooltip = null)
     {
         ImGui.SetNextItemWidth(SettingRow.InputWidth + 40f);
-        var changed = ImGui.Combo($"##{label}", ref currentIndex, items, items.Length);
+        ImGui.PushID(label);
+        var changed = ImGui.Combo("##combo", ref currentIndex, items, items.Length);
+        ImGui.PopID();
         ShowTooltipIfHovered(tooltip);
         DrawTrailingLabel(label);
         return changed;
@@ -94,7 +103,9 @@ public static class SidebarSettingRow
     public static bool InputText(string label, ref string value, uint maxLength = 256, string? tooltip = null)
     {
         ImGui.SetNextItemWidth(SettingRow.InputWidth + 80f);
-        var changed = ImGui.InputText($"##{label}", ref value, (int)maxLength);
+        ImGui.PushID(label);
+        var changed = ImGui.InputText("##input", ref value, (int)maxLength);
+        ImGui.PopID();
         ShowTooltipIfHovered(tooltip);
         DrawTrailingLabel(label);
         return changed;

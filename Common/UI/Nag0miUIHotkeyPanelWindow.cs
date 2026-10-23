@@ -48,6 +48,13 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
 
     // 自定义热键名 → 目标类型（角标数据源; 设置变更会重建本窗口, 与设置保持一致）
     private readonly Dictionary<string, CustomHotkeyTarget> 目标角标表 = new(StringComparer.Ordinal);
+    // 按条目缓存共享纹理来源；绘制时获取当帧 wrap，未就绪时下一帧继续尝试。
+    private readonly Dictionary<string, (uint GameIcon, bool GameIconHQ, string? IconPath, uint ActionId,
+        ISharedImmediateTexture Texture)> 图标缓存 = new(StringComparer.Ordinal);
+    // 充能数/数字角标贴图文件名表（预生成, 避免每帧插值分配）
+    private static readonly string[] 充能贴图键 = ["Charge0.png", "Charge1.png", "Charge2.png", "Charge3.png"];
+    private static readonly string[] 数字贴图键 =
+        ["Num2.png", "Num3.png", "Num4.png", "Num5.png", "Num6.png", "Num7.png", "Num8.png"];
     // 左键按压状态：起点在本窗内的按压才允许转拖动（防从别的窗口按住拖过本窗时劫持）;
     // 按压后移动超阈值即转拖动面板，松手当帧的格子点击被抑制（不触发热键）。
     // 拖动期间不再要求悬停——快速甩动鼠标逃出窗口一帧也不会断拖。
@@ -212,11 +219,34 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
         drawList.AddRectFilled(min, max, SimplePalette.ToU32(SimplePalette.FrameBg), 圆角);
 
         // 图标来源优先级：游戏内原始图标 id（物品等无动作条目，gameIconHQ=true 取 hq/ 子目录的 HQ 品质）
-        // → customIconPath → Action 表动作图标
-        var tex = gameIcon != 0
-            ? Svc.Texture.GetFromGameIcon(new GameIconLookup(gameIcon, itemHq: gameIconHQ)).GetWrapOrDefault(null)
-            : hk.CustomIconPath != null ? IconHelper.GetIconFromPath(hk.CustomIconPath)
-            : IconHelper.GetActionIcon(hk.ActionId);
+        // → customIconPath → Action 表动作图标；共享纹理可以缓存，wrap 仅在当帧使用。
+        ISharedImmediateTexture? texture;
+        if (图标缓存.TryGetValue(name, out var iconCache)
+            && iconCache.GameIcon == gameIcon && iconCache.GameIconHQ == gameIconHQ
+            && iconCache.IconPath == hk.CustomIconPath && iconCache.ActionId == hk.ActionId)
+        {
+            texture = iconCache.Texture;
+        }
+        else
+        {
+            texture = null;
+            if (gameIcon != 0)
+                texture = Svc.Texture.GetFromGameIcon(new GameIconLookup(gameIcon, itemHq: gameIconHQ));
+            else if (hk.CustomIconPath != null)
+            {
+                var directory = Svc.PluginInterface.AssemblyLocation.Directory?.FullName;
+                if (!string.IsNullOrEmpty(directory))
+                {
+                    var path = Path.Combine(directory, hk.CustomIconPath);
+                    if (File.Exists(path)) texture = Svc.Texture.GetFromFile(path);
+                }
+            }
+            else if (IconHelper.GetActionIconId(hk.ActionId) is { } actionIcon)
+                texture = Svc.Texture.GetFromGameIcon(actionIcon);
+            if (texture != null)
+                图标缓存[name] = (gameIcon, gameIconHQ, hk.CustomIconPath, hk.ActionId, texture);
+        }
+        var tex = texture?.GetWrapOrDefault(null);
         if (tex != null)
             drawList.AddImageRounded(tex.Handle, min + Vector2.One, max - Vector2.One,
                 Vector2.Zero, Vector2.One, SimplePalette.ToU32(Vector4.One), MathF.Max(0f, 圆角 - 1f));
@@ -294,6 +324,10 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
     // 技能激活判定：技能对应的 buff 仍在生效（见 Nag0miUIJobEnv.HotkeyActiveBuffs 映射）。
     // 自身类 buff 只看自己; 目标型 buff（极光/刚玉之心/石之心）看自己或任意存活队友——
     // 施放后目标可能变化, 按「谁还带着这个 buff」判定最贴近实际表现。
+    // 小队扫描按技能做 ~200ms 节流，自身状态仍逐帧更新。
+    private static readonly Dictionary<uint, (long 到期时刻, bool 激活)> 激活缓存 = new();
+    private const long 激活缓存毫秒 = 200;
+
     private static bool 技能激活中(uint actionId)
     {
         if (!Nag0miUIJobEnv.HotkeyActiveBuffs.TryGetValue(actionId, out var map)) return false;
@@ -301,9 +335,13 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
         if (me == null) return false;
         if (me.HasStatus(map.BuffId)) return true;
         if (map.SelfOnly) return false;
+        var now = Environment.TickCount64;
+        if (激活缓存.TryGetValue(actionId, out var cached) && now < cached.到期时刻) return cached.激活;
+        var active = false;
         foreach (var c in PartyHelper.GetParty())
-            if (!c.IsDead && c.HasStatus(map.BuffId)) return true;
-        return false;
+            if (!c.IsDead && c.HasStatus(map.BuffId)) { active = true; break; }
+        激活缓存[actionId] = (now + 激活缓存毫秒, active);
+        return active;
     }
 
     // 冷却/充能进度：整格压暗遮罩 + 圆圈进度条（顶部起, 弧长 = 剩余比例, 随时间顺时针消减）
@@ -360,7 +398,7 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
         if (maxCharges > 1)
         {
             var n = Math.Clamp((int)MathF.Floor(charges + 0.001f), 0, maxCharges);
-            var tex = ShuimoDraw.Tex($"Charge{Math.Min(n, 3)}.png");
+            var tex = ShuimoDraw.Tex(充能贴图键[Math.Min(n, 3)]);
             if (tex != null)
             {
                 var size = (max - min) * 0.45f;
@@ -394,10 +432,10 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
     {
         var tileH = max.Y - min.Y;
 
-        if (target >= CustomHotkeyTarget.Party2)
+        if (target is >= CustomHotkeyTarget.Party2 and <= CustomHotkeyTarget.Party8)
         {
             var num = (int)target - (int)CustomHotkeyTarget.Party2 + 2;
-            var tex = ShuimoDraw.Tex($"Num{num}.png");
+            var tex = ShuimoDraw.Tex(数字贴图键[num - 2]);
             if (tex != null)
             {
                 var h = tileH * 角标边长比;
@@ -434,14 +472,32 @@ public sealed class Nag0miUIHotkeyPanelWindow : Window
     // ============================================================
     // 把构建器产出的热键条目按 Nag0miUISettings.HotkeyOrder 的自定义顺序重排:
     // 顺序表里没有的名字按原相对顺序置尾（LINQ OrderBy 稳定排序）。
-    private static List<(string Name, IHotkey Hotkey, uint GameIcon, bool GameIconHQ)> 按自定义顺序排序(
+    // 结果 memo（实例级, 重建窗口即作废——重建会产生新的 IHotkey 实例）:
+    // 条目名字序与 rank 表均未变时复用上帧结果, 跳过 OrderBy。
+    private List<(string Name, IHotkey Hotkey, uint GameIcon, bool GameIconHQ)>? 排序缓存;
+    private List<string>? 排序缓存键序;
+    private IReadOnlyDictionary<string, int>? 排序缓存Rank;
+
+    private IReadOnlyList<(string Name, IHotkey Hotkey, uint GameIcon, bool GameIconHQ)> 按自定义顺序排序(
         IReadOnlyList<(string Name, IHotkey Hotkey, uint GameIcon, bool GameIconHQ)> entries)
     {
-        if (entries.Count < 2) return entries.ToList();
-        var order = Nag0miUISettings.Instance.GetOrderedHotkeyNames();
-        var rank = new Dictionary<string, int>(order.Count);
-        for (var i = 0; i < order.Count; i++) rank[order[i]] = i;
-        return entries.OrderBy(e => rank.TryGetValue(e.Name, out var r) ? r : int.MaxValue).ToList();
+        if (entries.Count < 2) return entries;
+        var rank = Nag0miUISettings.Instance.GetHotkeyOrderRank();
+        if (排序缓存 != null && ReferenceEquals(排序缓存Rank, rank)
+            && 排序缓存键序 != null && 排序缓存键序.Count == entries.Count)
+        {
+            var same = true;
+            for (var i = 0; i < entries.Count; i++)
+                if (!string.Equals(排序缓存键序[i], entries[i].Name, StringComparison.Ordinal)) { same = false; break; }
+            if (same) return 排序缓存;
+        }
+        var ordered = entries.OrderBy(e => rank.TryGetValue(e.Name, out var r) ? r : int.MaxValue).ToList();
+        var names = new List<string>(entries.Count);
+        foreach (var e in entries) names.Add(e.Name);
+        排序缓存键序 = names;
+        排序缓存Rank = rank;
+        排序缓存 = ordered;
+        return ordered;
     }
 
     // 松手提交：把拖拽后的可见序列合并回完整顺序（隐藏键保持原槽位）, 写回设置并落盘。

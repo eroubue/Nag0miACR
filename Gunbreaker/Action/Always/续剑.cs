@@ -12,8 +12,8 @@ public class 续剑 : IDecisionResolver
     public CheckResult Check()
     {
         if(GunbreakerHelper.通用检查())return new CheckResult(false, "通用检查未通过");
-        if (ActionHelper.GetAdjustedActionId(GunbreakerSkill.续剑) == GunbreakerSkill.续剑) return new CheckResult(false, "未获得续剑");
-        if (!ActionHelper.GetAdjustedActionId(GunbreakerSkill.续剑).IsActionHighlighted())
+        if (GnbFrameCache.GetAdjustedActionId(GunbreakerSkill.续剑) == GunbreakerSkill.续剑) return new CheckResult(false, "未获得续剑");
+        if (!GnbFrameCache.GetAdjustedActionId(GunbreakerSkill.续剑).IsActionHighlighted())
         {
             return new CheckResult(false, "当前不可使用");
         }
@@ -21,8 +21,8 @@ public class 续剑 : IDecisionResolver
         {
             return new CheckResult(false, "无情已冷却优先放无情");
         }
-        if (ActionHelper.RecentlyUsed(GunbreakerSkill.无情,1000)&&!Core.Me.HasStatus(GunbreakerBuff.无情)) return new CheckResult(false, "防止放了无情但没出buff");
-        if (ActionHelper.GetGcdRemain() <= 0.3&&!Core.Me.HasStatus(GunbreakerBuff.无情)) return new CheckResult(false, "GCD剩余不足");
+        if (ActionHelper.RecentlyUsed(GunbreakerSkill.无情,1000)&&!GnbFrameCache.HasStatus(GunbreakerBuff.无情)) return new CheckResult(false, "防止放了无情但没出buff");
+        if (ActionHelper.GetGcdRemain() <= 0.3&&!GnbFrameCache.HasStatus(GunbreakerBuff.无情)) return new CheckResult(false, "GCD剩余不足");
         return new CheckResult(true, "可释放续剑");
     }
 

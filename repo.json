@@ -1,0 +1,17 @@
+{
+  "author": "Nag0mi",
+  "version": "1.18",
+  "description": "\u843D\u9B44\u8C37\u4E2D\u5BD2\u98CE\u5439\uFF0C\u6625\u79CB\u8749\u9E23\u5C11\u5E74\u5F52\u3002",
+  "supportedJobs": [
+    {
+      "job": "GNB",
+      "contentScope": "HighEnd"
+    }
+  ],
+  "apiVersion": 15,
+  "referencePromeVersion": "1.5.10.3",
+  "downloadUrl": "https://github.com/eroubue/Nag0miACR/releases/latest/download/Nag0mi.zip",
+  "sourceRepositoryUrl": "https://github.com/eroubue/Nag0miACR/",
+  "sponsorUrl": "",
+  "sha256": "2a54dc1236f4e6b29ff04bf6da5b2856e5b7787d9a5b8c135bc7d55d8334322d"
+}

@@ -34,7 +34,7 @@ public class 无情2g : IOpener
     public void InitializeCountdown(CountDownHandler countdownHandler)
     {
    
-        if (Core.Me.HasStatus(GunbreakerBuff.王室亲卫)&&GunbreakerSettings.Instance.ST&&QT.QTGET(GunbreakerQT.强制盾姿))
+        if (Core.Me?.HasStatus(GunbreakerBuff.王室亲卫) == true&&GunbreakerSettings.Instance.ST&&QT.QTGET(GunbreakerQT.强制盾姿))
             countdownHandler.AddAction(
                 4500,
                 new PAction(GunbreakerSkill.关盾姿, ActionType.OffGcd, ActionTargetType.Self)
@@ -42,7 +42,7 @@ public class 无情2g : IOpener
                     RequiresVerification = true
                 });
         
-        if (Core.Me.HasStatus(GunbreakerBuff.王室亲卫)&&!GunbreakerSettings.Instance.ST&&QT.QTGET(GunbreakerQT.强制盾姿))
+        if (Core.Me?.HasStatus(GunbreakerBuff.王室亲卫) == true&&!GunbreakerSettings.Instance.ST&&QT.QTGET(GunbreakerQT.强制盾姿))
             countdownHandler.AddAction(
                 4500,
                 new PAction(GunbreakerSkill.盾姿, ActionType.OffGcd, ActionTargetType.Self)

@@ -9,6 +9,11 @@ namespace Nag0mi.Common.UI;
 // 全部改动即时生效（下一帧绘制即用新字体）, 改动后经 saveAction 落盘。
 public static class WindowFontSettingsUI
 {
+    // 游戏字体族名表与字号快速设置表：内容固定，提升为静态避免每帧重建
+    private static readonly string[] GameFontFamilyNames = Enum.GetNames<GameFontFamily>();
+    private static readonly (string Label, float Size)[] 字号快速设置 =
+        [("小", 12f), ("中", 16f), ("大", 20f), ("特大", 24f)];
+
     /// <summary>绘制单个窗口的字体设置（折叠节）。</summary>
     public static void DrawWindowFontSettings(string windowName, WindowFontSettings settings, Action? saveAction = null)
     {
@@ -88,7 +93,7 @@ public static class WindowFontSettingsUI
         ImGui.SetNextItemWidth(200f);
 
         var current = (int)settings.GameFontFamily;
-        var names = Enum.GetNames<GameFontFamily>();
+        var names = GameFontFamilyNames;
         if (ImGui.Combo("##游戏字体族", ref current, names, names.Length))
         {
             settings.GameFontFamily = (GameFontFamily)current;
@@ -148,7 +153,7 @@ public static class WindowFontSettingsUI
         }
 
         ImGui.Text("快速设置:");
-        foreach (var (label, size) in new[] { ("小", 12f), ("中", 16f), ("大", 20f), ("特大", 24f) })
+        foreach (var (label, size) in 字号快速设置)
         {
             ImGui.SameLine();
             if (ImGui.SmallButton(label))

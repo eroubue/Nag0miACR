@@ -144,7 +144,7 @@ public partial class GunbreakerRotation
 
         ImGui.Separator();
         ImGui.TextUnformatted($"子弹连充能: {ActionHelper.GetActionCharges(GunbreakerSkill.烈牙)}");
-        ImGui.TextUnformatted($"子弹连CD: {ActionHelper.GetActionCooldown(ActionHelper.GetAdjustedActionId(GunbreakerSkill.烈牙))}");
+        ImGui.TextUnformatted($"子弹连CD: {ActionHelper.GetActionCooldown(GnbFrameCache.GetAdjustedActionId(GunbreakerSkill.烈牙))}");
 
         if (Core.Me is { } me)
         {
@@ -153,7 +153,7 @@ public partial class GunbreakerRotation
                 $"命运之环{Fmt(GunbreakerAoe.FatedCircleBreakpoint(level))} " +
                 $"子弹连{Fmt(GunbreakerAoe.GnashingFangBreakpoint(level))} " +
                 $"音速破{Fmt(GunbreakerAoe.SonicBreakBreakpoint(level))}");
-            var rawCount = (int)TargetHelper.EnemyInRange(5);
+            var rawCount = (int)GnbFrameCache.EnemyInRange5();
             var dying = GunbreakerAoeTracker.CountDyingEnemies(2 * ActionHelper.GetGcdTotal());
             ImGui.TextUnformatted($"5m敌数: {rawCount}（将死{dying}，有效{Math.Max(0, rawCount - dying)}）");
         }

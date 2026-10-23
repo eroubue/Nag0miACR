@@ -7,11 +7,11 @@ using Nag0mi.Common.Helper;
 namespace Nag0mi.Common.UI;
 
 // 窗口字体管理器：统一处理各悬浮窗/设置窗的字体加载与应用。
-// 字体句柄按 (来源, 字号) 缓存，Uninstall 时统一 Dispose；
+// 字体句柄按 (类型, 路径, 字号) 元组键缓存（无字符串拼接分配），Uninstall 时统一 Dispose；
 // 任何加载/应用失败都静默回落宿主默认字体，绝不影响窗口绘制。
 public static class WindowFontManager
 {
-    private static readonly Dictionary<string, IFontHandle> FontCache = new(StringComparer.Ordinal);
+    private static readonly Dictionary<(FontType Type, string Path, float Size), IFontHandle> FontCache = new();
     private static readonly Dictionary<(GameFontFamily, float), IFontHandle> GameFontCache = new();
 
     /// <summary>以自定义字体绘制内容；未启用或加载失败时直接用默认字体绘制。</summary>
@@ -65,7 +65,7 @@ public static class WindowFontManager
     {
         if (fontSize <= 0) return null;
 
-        var key = $"system_{fontSize}";
+        var key = (FontType.SystemFont, "", fontSize);
         if (FontCache.TryGetValue(key, out var cached)) return cached;
 
         try
@@ -108,7 +108,7 @@ public static class WindowFontManager
     {
         if (string.IsNullOrEmpty(fontPath) || fontSize <= 0) return null;
 
-        var key = $"{fontPath}_{fontSize}";
+        var key = (FontType.CustomFont, fontPath, fontSize);
         if (FontCache.TryGetValue(key, out var cached)) return cached;
 
         if (!File.Exists(fontPath))

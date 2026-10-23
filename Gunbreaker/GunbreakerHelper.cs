@@ -1,4 +1,4 @@
-﻿using Nag0mi.Gunbreaker.Data;
+using Nag0mi.Gunbreaker.Data;
 using PromeRotation.Core;
 using PromeRotation.Extensions;
 using PromeRotation.Helpers;
@@ -6,31 +6,22 @@ using PromeRotation.Helpers;
 namespace Nag0mi.Gunbreaker;
 public static class GunbreakerHelper
 {
-    public static bool 通用检查()
-    {
-        var currentAttackRange = GameData.GetCurrentMeleeRange();
-        var player = Core.Me;
-        return player == null
-               || Core.Target == null
-               || Core.Target.EntityId == player.EntityId
-               || Core.Target.IsPlayer()
-               || Core.Target.DistanceToMe() > currentAttackRange
-               || GameData.IsPlayerOccupied();
-    }
+    // 结果按帧纪元缓存：同帧内所有 resolver 共享一次计算
+    public static bool 通用检查() => GnbFrameCache.CommonCheck();
 
-    
-    public static bool IsReady(uint actionId)
+    // 同帧内同一技能的就绪判定只计算一次
+    public static bool IsReady(uint actionId) => GnbFrameCache.IsReady(actionId, ComputeIsReady);
+
+    private static bool ComputeIsReady(uint actionId)
     {
-        var adjusted = ActionHelper.GetAdjustedActionId(actionId);
+        var adjusted = GnbFrameCache.GetAdjustedActionId(actionId);
         if (adjusted == 0 || !ActionHelper.IsActionAvailableByLevelAndQuest(adjusted) ||Core.Me == null||GameData.IsPlayerOccupied()||ActionHelper.RecentlyUsed(adjusted,300))
         {
             return false;
         }
         if (ActionHelper.GetActionCharges(adjusted) >= 0.995f)
             return true;
-        
-        
-        
+
         return ActionHelper.GetActionCooldown(adjusted)<=0.3;
     }
 
@@ -47,7 +38,7 @@ public static class GunbreakerHelper
         if (Core.Me != null)
         {
             // 获取buff剩余时间（秒）（float）
-            var buffTimeLeft = Core.Me.GetStatusLeftTime(statusId);
+            var buffTimeLeft = GnbFrameCache.GetStatusLeftTime(statusId);
        
         
             // 获取技能剩余冷却时间（秒）（float）
@@ -69,9 +60,13 @@ public static class GunbreakerHelper
         return ActionHelper.GetActionCooldown(spellId)<=(ActionHelper.GetGcdTotal() * count);
     }
 
-    public static float 烈牙层数()
+    // 同帧内层数不变，按帧纪元缓存
+    public static float 烈牙层数() => GnbFrameCache.FangCharges(ComputeFangCharges);
+
+    private static float ComputeFangCharges()
     {
         var player = Core.Me;
+        if (player == null) return 0f;
         float MaxCharges = 2f;  // 最大层数
         float PerCharge  = 30f; // 单层冷却时间
         // 返回距离充满还剩多少秒

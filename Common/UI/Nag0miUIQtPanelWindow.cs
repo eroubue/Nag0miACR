@@ -1,7 +1,9 @@
 // Portions Copyright (c) Eros001377, MIT License. Ported from ErosUI.
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Textures;
 using Dalamud.Interface.Windowing;
+using ECommons.DalamudServices;
 using Nag0mi.Common.Data;
 using PromeRotation.Data;
 using PromeRotation.Helpers;
@@ -39,6 +41,10 @@ public sealed class Nag0miUIQtPanelWindow : Window
     // 格子视觉位置（按 QT 键索引, 窗口相对坐标, 拖动面板时按钮随窗刚性平移）：
     // 交换让位/松手回落时指数阻尼收敛到格位
     private readonly Dictionary<string, Vector2> 动画格位 = new(StringComparer.Ordinal);
+
+    // 按 QT 键缓存共享纹理来源，wrap 每帧获取以遵循纹理生命周期。
+    private readonly Dictionary<string, (uint IconId, bool IsGameIcon, ISharedImmediateTexture Texture)> 图标缓存
+        = new(StringComparer.Ordinal);
 
     private bool 位置已恢复;
     private bool 面板拖动中;
@@ -200,9 +206,23 @@ public sealed class Nag0miUIQtPanelWindow : Window
         var drawList = ImGui.GetWindowDrawList();
         var isDraggingSource = index == 拖拽源;
 
-        // 图标（解析器返回 null/0 → 问号图标 + QT 显示名首字角标）
+        // 图标（解析器返回 null/0 → 问号图标 + QT 显示名首字角标）;
+        // 来源变化时重新解析；异步加载未就绪时下帧继续取 wrap。
         var (iconId, isGameIcon, marker) = 解析图标(def);
-        var tex = isGameIcon ? IconHelper.GetGameIcon(iconId) : IconHelper.GetActionIcon(iconId);
+        ISharedImmediateTexture? texture;
+        if (图标缓存.TryGetValue(def.Id, out var iconCache)
+            && iconCache.IconId == iconId && iconCache.IsGameIcon == isGameIcon)
+        {
+            texture = iconCache.Texture;
+        }
+        else
+        {
+            var gameIcon = isGameIcon ? iconId : IconHelper.GetActionIconId(iconId);
+            texture = gameIcon is > 0 ? Svc.Texture.GetFromGameIcon(gameIcon.Value) : null;
+            if (texture != null)
+                图标缓存[def.Id] = (iconId, isGameIcon, texture);
+        }
+        var tex = texture?.GetWrapOrDefault(null);
         var imageMin = min + new Vector2(2f);
         var imageMax = max - new Vector2(2f);
         if (tex != null)
@@ -284,13 +304,28 @@ public sealed class Nag0miUIQtPanelWindow : Window
     // ============================================================
     // 把宿主解析出的 QT 清单按 Nag0miUISettings.QtOrder 的自定义顺序重排:
     // 顺序表里没有的键按原相对顺序置尾（LINQ OrderBy 稳定排序）。
-    private static List<QtDefinition> 按自定义顺序排序(IReadOnlyList<QtDefinition> defs)
+    // 输入定义与 rank 表均未变时复用排序；同名定义更新标签后也必须刷新。
+    private static List<QtDefinition>? 排序缓存;
+    private static List<QtDefinition>? 排序缓存输入;
+    private static IReadOnlyDictionary<string, int>? 排序缓存Rank;
+
+    private static IReadOnlyList<QtDefinition> 按自定义顺序排序(IReadOnlyList<QtDefinition> defs)
     {
-        if (defs.Count < 2) return defs.ToList();
-        var order = Nag0miUISettings.Instance.GetOrderedQtKeys();
-        var rank = new Dictionary<string, int>(order.Count);
-        for (var i = 0; i < order.Count; i++) rank[order[i]] = i;
-        return defs.OrderBy(d => rank.TryGetValue(d.Id, out var r) ? r : int.MaxValue).ToList();
+        if (defs.Count < 2) return defs;
+        var rank = Nag0miUISettings.Instance.GetQtOrderRank();
+        if (排序缓存 != null && ReferenceEquals(排序缓存Rank, rank)
+            && 排序缓存输入 != null && 排序缓存输入.Count == defs.Count)
+        {
+            var same = true;
+            for (var i = 0; i < defs.Count; i++)
+                if (!Equals(排序缓存输入[i], defs[i])) { same = false; break; }
+            if (same) return 排序缓存;
+        }
+        var ordered = defs.OrderBy(d => rank.TryGetValue(d.Id, out var r) ? r : int.MaxValue).ToList();
+        排序缓存输入 = defs.ToList();
+        排序缓存Rank = rank;
+        排序缓存 = ordered;
+        return ordered;
     }
 
     // 松手提交：把拖拽后的可见序列合并回完整顺序（隐藏键保持原槽位）, 写回设置并落盘。

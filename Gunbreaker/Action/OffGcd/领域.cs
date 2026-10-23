@@ -16,7 +16,7 @@ public class 领域 : IDecisionResolver
         if(GunbreakerHelper.通用检查())return new CheckResult(false, "通用检查未通过");
     
 
-        if (!GunbreakerHelper.IsReady(ActionHelper.GetAdjustedActionId(GunbreakerSkill.危险领域)))
+        if (!GunbreakerHelper.IsReady(GnbFrameCache.GetAdjustedActionId(GunbreakerSkill.危险领域)))
         {
             return new CheckResult(false, "危险领域未冷却");
         }
@@ -33,9 +33,9 @@ public class 领域 : IDecisionResolver
             return new CheckResult(false, "领域QT未开启");
         }
         if (GunbreakerSkill.无情.CoolDownInGCDs(2)&&QT.QTGET(GunbreakerQT.无情)&&QT.QTGET(GunbreakerQT.爆发)) return new CheckResult(false, "无情前2GCD不打");
-        if (ActionHelper.RecentlyUsed(GunbreakerSkill.无情,1000)&&!Core.Me.HasStatus(GunbreakerBuff.无情)) return new CheckResult(false, "防止放了无情但没出buff");
-        if (ActionHelper.GetGcdRemain() <= 0.3&&!Core.Me.HasStatus(GunbreakerBuff.无情)) return new CheckResult(false, "GCD剩余不足");
-        if (ActionHelper.GetGcdRemain() <= 0.6&&Core.Me.HasStatus(GunbreakerBuff.无情)) return new CheckResult(false, "无情中GCD剩余不足");
+        if (ActionHelper.RecentlyUsed(GunbreakerSkill.无情,1000)&&!GnbFrameCache.HasStatus(GunbreakerBuff.无情)) return new CheckResult(false, "防止放了无情但没出buff");
+        if (ActionHelper.GetGcdRemain() <= 0.3&&!GnbFrameCache.HasStatus(GunbreakerBuff.无情)) return new CheckResult(false, "GCD剩余不足");
+        if (ActionHelper.GetGcdRemain() <= 0.6&&GnbFrameCache.HasStatus(GunbreakerBuff.无情)) return new CheckResult(false, "无情中GCD剩余不足");
         return new CheckResult(true, "可释放领域");
             
     }

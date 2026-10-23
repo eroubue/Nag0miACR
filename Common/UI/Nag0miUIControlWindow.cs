@@ -181,15 +181,18 @@ internal sealed class Nag0miUIControlWindow : Window
                 _ => AcrState.Off,
             };
         }
-        Tooltip($"{stateText}\n右键关闭 ACR");
+        // 提示文本仅在悬停时拼，避免每帧插值分配（Tooltip 内部再判一次悬停, 行为不变）
+        if (ImGui.IsItemHovered())
+            Tooltip($"{stateText}\n右键关闭 ACR");
 
         // 2. 模式循环键（job 注入；未注入时不响应点击）
         ImGui.SetCursorPos(new Vector2(10, OverlayBerthShape.ButtonRows[1]) * scale);
         var modeLabel = Nag0miUIJobEnv.CurrentModeLabel?.Invoke() ?? "模";
-        if (Button(modeLabel + "###Mode", SimplePalette.ModeButtonColor(模式显示名())))
+        if (Button(ModeButtonLabel(modeLabel), SimplePalette.ModeButtonColor(模式显示名())))
             Nag0miUIJobEnv.CycleMode?.Invoke();
         buttonHovered |= ImGui.IsItemHovered();
-        Tooltip($"当前模式：{模式显示名()}\n左键循环切换模式\n每套配置独立保存");
+        if (ImGui.IsItemHovered())
+            Tooltip($"当前模式：{模式显示名()}\n左键循环切换模式\n每套配置独立保存");
 
         // 3. 自动攻击键（开=彩色高亮 / 关=缟羽压暗——墨锭深底上禁用灰/黑不可辨, 固定用压暗亮色）
         var autoPull = host.AutoPull;
@@ -197,7 +200,8 @@ internal sealed class Nag0miUIControlWindow : Window
                 autoPull ? SimplePalette.StateRunning : ShuimoPalette.WithAlpha(ShuimoPalette.Hex(0xEEEEEE), 0.45f)))
             host.AutoPull = !autoPull;
         buttonHovered |= ImGui.IsItemHovered();
-        Tooltip($"自动攻击：{(autoPull ? "已开启" : "已关闭")}\n左键切换");
+        if (ImGui.IsItemHovered())
+            Tooltip($"自动攻击：{(autoPull ? "已开启" : "已关闭")}\n左键切换");
 
         // 4. 设置键（贴条展开设置窗口; 缟羽图标）
         if (IconButton("Settings", FontAwesomeIcon.Cog, OverlayBerthShape.ButtonRows[3], ShuimoPalette.Hex(0xEEEEEE)))
@@ -257,11 +261,32 @@ internal sealed class Nag0miUIControlWindow : Window
             MathF.Max(1f, scale));
     }
 
+    // 按钮标签缓存：图标字符 + "###" + id 每帧拼接改为按 (图标, id) 缓存（图标/控件集合固定）
+    private readonly Dictionary<(FontAwesomeIcon Icon, string Id), string> iconButtonLabels = new();
+    // 模式键标签缓存：模式文字变化时才重拼
+    private string? modeButtonLabel;
+    private string? modeButtonLabelSource;
+
+    private string ModeButtonLabel(string modeLabel)
+    {
+        if (modeButtonLabelSource != modeLabel)
+        {
+            modeButtonLabelSource = modeLabel;
+            modeButtonLabel = modeLabel + "###Mode";
+        }
+        return modeButtonLabel!;
+    }
+
     private bool IconButton(string id, FontAwesomeIcon icon, float y, Vector4 color)
     {
         ImGui.SetCursorPos(new Vector2(10, y) * scale);
         ImGui.PushFont(UiBuilder.IconFont);
-        try { return Button(icon.ToIconString() + "###" + id, color); }
+        try
+        {
+            if (!iconButtonLabels.TryGetValue((icon, id), out var label))
+                iconButtonLabels[(icon, id)] = label = icon.ToIconString() + "###" + id;
+            return Button(label, color);
+        }
         finally { ImGui.PopFont(); }
     }
 
