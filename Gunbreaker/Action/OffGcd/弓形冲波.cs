@@ -15,9 +15,9 @@ namespace Nag0mi.Gunbreaker.Action.OffGcd
             if(GunbreakerHelper.通用检查())return new CheckResult(false, "通用检查未通过");
             if (Core.Target != null && Core.Target.DistanceToMe() >  5.0)
                 return new CheckResult(false, "距离大于5米");
-            if (ActionHelper.GetGcdRemain() <= 0.3&&!GnbFrameCache.HasStatus(GunbreakerBuff.无情)) return new CheckResult(false, "GCD剩余不足");
-            if (ActionHelper.GetGcdRemain() <= 0.6&&GnbFrameCache.HasStatus(GunbreakerBuff.无情)) return new CheckResult(false, "无情中GCD剩余不足");
-            var aoeCount = GnbFrameCache.EnemyInRange5();
+            if (ActionHelper.GetGcdRemain() <= 0.3&&!Core.Me.HasStatus(GunbreakerBuff.无情)) return new CheckResult(false, "GCD剩余不足");
+            if (ActionHelper.GetGcdRemain() <= 0.6&&Core.Me.HasStatus(GunbreakerBuff.无情)) return new CheckResult(false, "无情中GCD剩余不足");
+            var aoeCount = TargetHelper.EnemyInRange(5);
             if (!GunbreakerHelper.IsReady(GunbreakerSkill.弓形冲波))
             {
                 return new CheckResult(false, "技能未就绪");
@@ -31,9 +31,9 @@ namespace Nag0mi.Gunbreaker.Action.OffGcd
                 return new CheckResult(false, "QT未开启");
             }
 
-            if(Core.Me != null && !GnbFrameCache.HasStatus(GunbreakerBuff.无情) && !QT.QTGET(GunbreakerQT.弓形冲波允许错开无情))return new CheckResult(false, "无情外不打");
+            if(Core.Me != null && !Core.Me.HasStatus(GunbreakerBuff.无情) && !QT.QTGET(GunbreakerQT.弓形冲波允许错开无情))return new CheckResult(false, "无情外不打");
         
-            if (ActionHelper.RecentlyUsed(GunbreakerSkill.无情,1000)&&Core.Me != null && !GnbFrameCache.HasStatus(GunbreakerBuff.无情) )return new CheckResult(false, "防止放了无情但没出buff");
+            if (ActionHelper.RecentlyUsed(GunbreakerSkill.无情,1000)&&Core.Me != null && !Core.Me.HasStatus(GunbreakerBuff.无情) )return new CheckResult(false, "防止放了无情但没出buff");
         
             if (aoeCount < 3&&QT.QTGET(GunbreakerQT.小于3目标时不用弓形)) return new CheckResult(false, "小于3目标");
         

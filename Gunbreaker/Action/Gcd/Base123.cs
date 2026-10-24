@@ -17,9 +17,9 @@ public class Base123 : IDecisionResolver
        
         
         if (!GunbreakerHelper.IsReady(GunbreakerSkill.利刃斩)) return new CheckResult(false, "利刃斩未冷却");
-        if (((GnbFrameCache.GetAdjustedActionId(36937U) == 36938U || GnbFrameCache.GetAdjustedActionId(36937U) == 36939U)))
+        if (((ActionHelper.GetAdjustedActionId(36937U) == 36938U || ActionHelper.GetAdjustedActionId(36937U) == 36939U)))
             return new CheckResult(false, "正在狮心连里不打123");//正在狮心连里不打123
-        if (((GnbFrameCache.GetAdjustedActionId(GunbreakerSkill.烈牙) == GunbreakerSkill.猛兽爪 || GnbFrameCache.GetAdjustedActionId(GunbreakerSkill.烈牙) == GunbreakerSkill.凶禽爪)))
+        if (((ActionHelper.GetAdjustedActionId(GunbreakerSkill.烈牙) == GunbreakerSkill.猛兽爪 || ActionHelper.GetAdjustedActionId(GunbreakerSkill.烈牙) == GunbreakerSkill.凶禽爪)))
             return new CheckResult(false, "正在子弹连里不打123");//正在子弹连里不打123
         
         if (ActionHelper.GetLastComboID() == GunbreakerSkill.残暴弹 && GunbreakerSkill.迅连斩.IsActionHighlighted() &&
@@ -30,9 +30,9 @@ public class Base123 : IDecisionResolver
             JobGaugeHelper.GNB.Ammo == 3 &&
             Core.Me != null &&
             Core.Me.Level >= 88) return new CheckResult(false, "溢出不打准备卸子弹");//溢出不打准备卸子弹
-        if (ActionHelper.RecentlyUsed(GunbreakerSkill.无情,1000) && Core.Me != null && !GnbFrameCache.HasStatus(GunbreakerBuff.无情)) return new CheckResult(false, "防止放了无情但没出buff就打");//防止放了无情但没出buff就打
+        if (ActionHelper.RecentlyUsed(GunbreakerSkill.无情,1000) && Core.Me != null && !Core.Me.HasStatus(GunbreakerBuff.无情)) return new CheckResult(false, "防止放了无情但没出buff就打");//防止放了无情但没出buff就打
         if (ActionHelper.GetLastComboID() == GunbreakerSkill.恶魔切 && Core.Me != null && Core.Me.Level<100
-            && Math.Max(0, (int)GnbFrameCache.EnemyInRange5() - GunbreakerAoeTracker.CountDyingEnemies(ActionHelper.GetGcdTotal())) >= GunbreakerAoe.BasicComboBreakpoint(Core.Me.Level)) return new CheckResult(false, "小于一百级没狮心连时不中断aoe连击");
+            && Math.Max(0, (int)TargetHelper.EnemyInRange(5) - GunbreakerAoeTracker.CountDyingEnemies(ActionHelper.GetGcdTotal())) >= GunbreakerAoe.BasicComboBreakpoint(Core.Me.Level)) return new CheckResult(false, "小于一百级没狮心连时不中断aoe连击");
        // if (ActionHelper.GetLastComboID() == GunbreakerSkill.残暴弹 && ActionHelper.GetComboLeftTime() < 5 && !Core.Me.HasAura(Buffs.无情)) return new CheckResult(true, "26");
         //炒股模式3续剑-奇数分钟3弹开始打无情前子弹连，偶数分钟1弹开始打无情前子弹连
 
@@ -45,7 +45,7 @@ public class Base123 : IDecisionResolver
 
     public PAction GetAction()
     {
-        if (ActionHelper.GetLastComboID() == GunbreakerSkill.残暴弹&&Core.Me?.Level >= 26&&ActionHelper.GetComboLeftTime() >=0.1) return new PAction(GunbreakerSkill.迅连斩, ActionType.Gcd, ActionTargetType.Target);
+        if (ActionHelper.GetLastComboID() == GunbreakerSkill.残暴弹&&Core.Me.Level >= 26&&ActionHelper.GetComboLeftTime() >=0.1) return new PAction(GunbreakerSkill.迅连斩, ActionType.Gcd, ActionTargetType.Target);
         if (ActionHelper.GetLastComboID() == GunbreakerSkill.利刃斩&&ActionHelper.GetComboLeftTime() >=0.1) return new PAction(GunbreakerSkill.残暴弹, ActionType.Gcd, ActionTargetType.Target);
         
        

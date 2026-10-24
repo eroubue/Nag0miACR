@@ -4,7 +4,7 @@ namespace Nag0mi.Common.Data;
 // 并在此处追加对应条目（日期 / 版本 / 内容）。Version 与清单文件中的 version 保持一致。
 public static class AcrChangelog
 {
-    public const string Version = "1.18";
+    public const string Version = "1.19";
 
     public enum LineKind { Add, Remove, Note }
 
@@ -13,6 +13,11 @@ public static class AcrChangelog
 
     public static readonly Entry[] Entries =
     [
+        new("2026-10-24", "1.19",
+        [
+            new(LineKind.Remove, "战斗输出恢复至 V1.17，移除 V1.18 缓存快照"),
+            new(LineKind.Note, "保留 V1.18 UI 优化"),
+        ]),
         new("2026-10-23", "1.18",
         [
             new(LineKind.Note, "优化战斗查询与决策缓存"),

@@ -29,9 +29,10 @@ internal sealed class GunbreakerProfiles(GunbreakerControlConfig config)
     public bool Capture(GunbreakerSettings settings)
     {
         var profile = Config.Get(Config.CurrentMode);
-        if (profile.Parameters.Matches(settings)) return false;
-        profile.Parameters = GunbreakerParameters.Capture(settings);
-        return true;
+        var parameters = GunbreakerParameters.Capture(settings);
+        var changed = profile.Parameters != parameters;
+        profile.Parameters = parameters;
+        return changed;
     }
 
     public void Apply(GunbreakerSettings settings) =>

@@ -9,20 +9,20 @@ namespace Nag0mi.Gunbreaker.Action.Gcd;
 
 public class 音速破 : IDecisionResolver
 {
+    private static readonly 倍攻 s_doubledownSlot = new 倍攻();
     public CheckResult Check()
     {
-        var player = Core.Me;
-        if (player == null || GunbreakerHelper.通用检查())return new CheckResult(false, "通用检查未通过");
+        if(GunbreakerHelper.通用检查())return new CheckResult(false, "通用检查未通过");
 
-        if (ActionHelper.RecentlyUsed(GunbreakerSkill.无情,1000)&&!GnbFrameCache.HasStatus(GunbreakerBuff.无情)) return new CheckResult(false, "防止放了无情但没出buff");
+        if (ActionHelper.RecentlyUsed(GunbreakerSkill.无情,1000)&&!Core.Me.HasStatus(GunbreakerBuff.无情)) return new CheckResult(false, "防止放了无情但没出buff");
         if (!GunbreakerHelper.IsReady(GunbreakerSkill.音速破)) return new CheckResult(false, "音速破未冷却");
-        if(!GnbFrameCache.HasStatus(GunbreakerBuff.音速破预备))return new CheckResult(false, "无音速破预备buff");
+        if(!Core.Me.HasStatus(GunbreakerBuff.音速破预备))return new CheckResult(false, "无音速破预备buff");
        
         if (!QT.QTGET(GunbreakerQT.爆发)) return new CheckResult(false, "爆发QT未开启");
         if (!QT.QTGET(GunbreakerQT.音速破)) return new CheckResult(false, "音速破QT未开启");
-        if(!QT.QTGET(GunbreakerQT.优先音速破)&&GnbFrameCache.HasStatus(GunbreakerBuff.无情)&&ActionHelper.GetActionCharges(GnbFrameCache.GetAdjustedActionId(GunbreakerSkill.烈牙))>=1.95)return new CheckResult(false, "优先子弹连");
-        var aoecount = GnbFrameCache.EnemyInRange5();
-        if ((int)aoecount >= GunbreakerAoe.SonicBreakBreakpoint(player.Level)) return new CheckResult(false, "目标数达到AOE平衡点不走单");
+        if(!QT.QTGET(GunbreakerQT.优先音速破)&&Core.Me.HasStatus(GunbreakerBuff.无情)&&ActionHelper.GetActionCharges(ActionHelper.GetAdjustedActionId(GunbreakerSkill.烈牙))>=1.95)return new CheckResult(false, "优先子弹连");
+        var aoecount = TargetHelper.EnemyInRange(5);
+        if ((int)aoecount >= GunbreakerAoe.SonicBreakBreakpoint(Core.Me.Level)) return new CheckResult(false, "目标数达到AOE平衡点不走单");
 
         return new CheckResult(true, "可释放音速破");
     }

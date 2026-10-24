@@ -65,61 +65,27 @@ public static class GunbreakerAoe
         return (combo + spend) / 3f;
     }
 
-    // 平衡点按等级缓存：等级在一局内极少变化，四个结果一起按等级重算一次，
-    // 避免每次调用重复扫描 1..32 并分配闭包
-    private static int _cacheLevel = -1;
-    private static int _cacheBasicCombo;
-    private static int _cacheFatedCircle;
-    private static int _cacheGnashingFang;
-    private static int _cacheSonicBreak;
-
     /// <summary>基础 AOE 连（恶魔切/恶魔杀）威力不低于单体 123 的最小目标数。</summary>
-    public static int BasicComboBreakpoint(int level)
-    {
-        EnsureLevel(level);
-        return _cacheBasicCombo;
-    }
+    public static int BasicComboBreakpoint(int level) => Breakpoint(level, SingleTargetPerGcd(level));
 
     /// <summary>命运之环每目标威力不低于爆发击的最小目标数；72级前无命运之环，返回 MaxValue。</summary>
-    public static int FatedCircleBreakpoint(int level)
-    {
-        EnsureLevel(level);
-        return _cacheFatedCircle;
-    }
+    public static int FatedCircleBreakpoint(int level) =>
+        level < FatedCircleLevel
+            ? int.MaxValue
+            : SmallestN(n => FatedCircleValue(level) * n >= BurstStrikeValue(level));
 
     /// <summary>AOE 循环威力不低于子弹连（含续剑）的最小目标数；72级前沿用现状不跳过子弹连。</summary>
     public static int GnashingFangBreakpoint(int level)
-    {
-        EnsureLevel(level);
-        return _cacheGnashingFang;
-    }
-
-    /// <summary>AOE 循环威力不低于音速破（DoT 跳满）的最小目标数；54级前无音速破，返回 MaxValue。</summary>
-    public static int SonicBreakBreakpoint(int level)
-    {
-        EnsureLevel(level);
-        return _cacheSonicBreak;
-    }
-
-    private static void EnsureLevel(int level)
-    {
-        if (level == _cacheLevel) return;
-        _cacheBasicCombo = Breakpoint(level, SingleTargetPerGcd(level));
-        _cacheFatedCircle = level < FatedCircleLevel
-            ? int.MaxValue
-            : SmallestN(n => FatedCircleValue(level) * n >= BurstStrikeValue(level));
-        _cacheGnashingFang = ComputeGnashingFangBreakpoint(level);
-        _cacheSonicBreak = level < SonicBreakLevel ? int.MaxValue : Breakpoint(level, SonicBreakPotency);
-        _cacheLevel = level;
-    }
-
-    private static int ComputeGnashingFangBreakpoint(int level)
     {
         if (level < FatedCircleLevel) return int.MaxValue;
         var fangPerGcd = (GnashingFangPotency + SavageClawPotency + WickedTalonPotency
             + (level >= ContinuationLevel ? JugularRipPotency + AbdomenTearPotency + EyeGougePotency : 0f)) / 3f;
         return Breakpoint(level, fangPerGcd);
     }
+
+    /// <summary>AOE 循环威力不低于音速破（DoT 跳满）的最小目标数；54级前无音速破，返回 MaxValue。</summary>
+    public static int SonicBreakBreakpoint(int level) =>
+        level < SonicBreakLevel ? int.MaxValue : Breakpoint(level, SonicBreakPotency);
 
     private static int Breakpoint(int level, float singleTargetPerGcd) =>
         SmallestN(n => AoeLoopPerGcd(level, n) >= singleTargetPerGcd);

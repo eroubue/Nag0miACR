@@ -13,8 +13,7 @@ public class 命运之环 : IDecisionResolver
 
     public CheckResult Check()
     {
-        var player = Core.Me;
-        if (player == null || GunbreakerHelper.通用检查())return new CheckResult(false, "通用检查未通过");
+        if(GunbreakerHelper.通用检查())return new CheckResult(false, "通用检查未通过");
        
         if (Core.Target != null && Core.Target.DistanceToMe() >  5.0)
             return new CheckResult(false, "距离大于5米");
@@ -24,15 +23,15 @@ public class 命运之环 : IDecisionResolver
         if (!QT.QTGET(GunbreakerQT.AOE)) return new CheckResult(false, "AOEQT未开启");
         if (!QT.QTGET(GunbreakerQT.命运之环)) return new CheckResult(false, "命运之环QT未开启");
         
-        if (ActionHelper.RecentlyUsed(GunbreakerSkill.无情,1000)&&!GnbFrameCache.HasStatus(GunbreakerBuff.无情)) return new CheckResult(false, "防止放了无情但没出buff");
-        var aoeCount = GnbFrameCache.EnemyInRange5();
-        var breakpoint = GunbreakerAoe.FatedCircleBreakpoint(player.Level);
+        if (ActionHelper.RecentlyUsed(GunbreakerSkill.无情,1000)&&!Core.Me.HasStatus(GunbreakerBuff.无情)) return new CheckResult(false, "防止放了无情但没出buff");
+        var aoeCount = TargetHelper.EnemyInRange(5);
+        var breakpoint = GunbreakerAoe.FatedCircleBreakpoint(Core.Me.Level);
         if ((int)aoeCount < breakpoint) return new CheckResult(false, "AOE数量不足");
-        if (GnbFrameCache.HasStatus(4192) || GnbFrameCache.HasStatus(4194)) return new CheckResult(false, "妖星乱舞绝境战，有应战buff不打");
+        if (Core.Me.HasStatus(4192) || Core.Me.HasStatus(4194)) return new CheckResult(false, "妖星乱舞绝境战，有应战buff不打");
         
-        if (GnbFrameCache.HasStatus(GunbreakerBuff.无情)) return new CheckResult(true, "无情中打");
+        if (Core.Me.HasStatus(GunbreakerBuff.无情)) return new CheckResult(true, "无情中打");
         // 等级判断逻辑
-        if (player.Level == 100)
+        if (Core.Me.Level == 100)
         {
             if (JobGaugeHelper.GNB.Ammo == 3 &&
                 ActionHelper.GetLastComboID() == GunbreakerSkill.残暴弹) return new CheckResult(true, "溢出时打");
@@ -43,14 +42,14 @@ public class 命运之环 : IDecisionResolver
             return new CheckResult(false, "不打");
         }
 
-        if (player.Level >= 88 && player.Level < 100)
+        if (Core.Me.Level >= 88 && Core.Me.Level < 100)
         {
             if (JobGaugeHelper.GNB.Ammo == 3 &&
                 ActionHelper.GetLastComboID() == GunbreakerSkill.残暴弹) return new CheckResult(true, "溢出时打");
             if (JobGaugeHelper.GNB.Ammo == 3 &&
                 ActionHelper.GetLastComboID() == GunbreakerSkill.恶魔切) return new CheckResult(true, "溢出时打");
         }
-        else if (player.Level < 88)
+        else if (Core.Me.Level < 88)
         {
             if (JobGaugeHelper.GNB.Ammo == 2 &&
                 ActionHelper.GetLastComboID() == GunbreakerSkill.残暴弹) return new CheckResult(true, "溢出时打");

@@ -67,7 +67,7 @@ public sealed class GunbreakerAoeCountCondition : ICondition, IImmediateConditio
     /// <summary>5m 内有效敌数：实际敌数减去连击窗口内预计死亡的敌数。</summary>
     public static int GetEffectiveCount()
     {
-        var total = (int)GnbFrameCache.EnemyInRange5();
+        var total = (int)TargetHelper.EnemyInRange(5);
         var horizon = (ActionHelper.GetLastComboID() == GunbreakerSkill.恶魔切 ? 1 : 2) * ActionHelper.GetGcdTotal();
         return Math.Max(0, total - GunbreakerAoeTracker.CountDyingEnemies(horizon));
     }

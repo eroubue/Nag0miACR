@@ -15,34 +15,33 @@ public class 爆发击 : IDecisionResolver
 
     public CheckResult Check()
     {
-        var player = Core.Me;
-        if (player == null || GunbreakerHelper.通用检查())return new CheckResult(false, "通用检查未通过");
+        if(GunbreakerHelper.通用检查())return new CheckResult(false, "通用检查未通过");
 
         if (JobGaugeHelper.GNB.Ammo == 0) return new CheckResult(false, "无晶壤");
         
         if (!QT.QTGET(GunbreakerQT.爆发击)) return new CheckResult(false, "爆发击QT未开启");
         if (!GunbreakerHelper.IsReady(GunbreakerSkill.爆发击)) return new CheckResult(false, "技能未冷却");
-        if (s_gnashingFangSlot.CheckCached().Success)
+        if (s_gnashingFangSlot.Check().Success)
             return new CheckResult(false, "子弹连优先");
-        if (s_lionHeartSlot.CheckCached().Success)
+        if (s_lionHeartSlot.Check().Success)
             return new CheckResult(false, "狮心连优先");
-        if (s_doubledownSlot.CheckCached().Success)
+        if (s_doubledownSlot.Check().Success)
             return new CheckResult(false, "倍攻优先");
-        if ((GnbFrameCache.GetAdjustedActionId(GunbreakerSkill.崛起之心)==GunbreakerSkill.支配之心||GnbFrameCache.GetAdjustedActionId(GunbreakerSkill.崛起之心)==GunbreakerSkill.终结之心))
+        if ((ActionHelper.GetAdjustedActionId(GunbreakerSkill.崛起之心)==GunbreakerSkill.支配之心||ActionHelper.GetAdjustedActionId(GunbreakerSkill.崛起之心)==GunbreakerSkill.终结之心))
             return new CheckResult(false, "正在狮心连里不打");
-        if (((GnbFrameCache.GetAdjustedActionId(GunbreakerSkill.烈牙) == GunbreakerSkill.猛兽爪 || GnbFrameCache.GetAdjustedActionId(GunbreakerSkill.烈牙) == GunbreakerSkill.凶禽爪)))
+        if (((ActionHelper.GetAdjustedActionId(GunbreakerSkill.烈牙) == GunbreakerSkill.猛兽爪 || ActionHelper.GetAdjustedActionId(GunbreakerSkill.烈牙) == GunbreakerSkill.凶禽爪)))
             return new CheckResult(false, "正在子弹连里不打");
-        var aoeCount = GnbFrameCache.EnemyInRange5();
-        if ((int)aoeCount >= GunbreakerAoe.FatedCircleBreakpoint(player.Level) && GunbreakerHelper.IsReady(GunbreakerSkill.命运之环)&&QT.QTGET(GunbreakerQT.AOE)&&!GnbFrameCache.HasStatus(4192) &&! GnbFrameCache.HasStatus(4194)) return new CheckResult(false, "AOE中优先命运之环");
+        var aoeCount = TargetHelper.EnemyInRange(5);
+        if ((int)aoeCount >= GunbreakerAoe.FatedCircleBreakpoint(Core.Me.Level) && GunbreakerHelper.IsReady(GunbreakerSkill.命运之环)&&QT.QTGET(GunbreakerQT.AOE)&&!Core.Me.HasStatus(4192) &&! Core.Me.HasStatus(4194)) return new CheckResult(false, "AOE中优先命运之环");
 
         if (QT.QTGET(GunbreakerQT.仅使用爆发击卸除子弹)&&JobGaugeHelper.GNB.Ammo >= (byte) GunbreakerSettings.Instance.保留子弹数+1) return new CheckResult(true, "卸除子弹");
-        if (ActionHelper.RecentlyUsed(GunbreakerSkill.无情,1000)&&!GnbFrameCache.HasStatus(GunbreakerBuff.无情)) return new CheckResult(false, "防止放了无情但没出buff");
+        if (ActionHelper.RecentlyUsed(GunbreakerSkill.无情,1000)&&!Core.Me.HasStatus(GunbreakerBuff.无情)) return new CheckResult(false, "防止放了无情但没出buff");
 
-        if(GnbFrameCache.HasStatus(GunbreakerBuff.Medicated)&&GnbFrameCache.HasStatus(GunbreakerBuff.无情))return new CheckResult(true, "无情+药打");
+        if(Core.Me.HasStatus(GunbreakerBuff.Medicated)&&Core.Me.HasStatus(GunbreakerBuff.无情))return new CheckResult(true, "无情+药打");
         // 等级判断逻辑
-        if (player.Level == 100)
+        if (Core.Me.Level == 100)
         {
-            if (GnbFrameCache.HasStatus(GunbreakerBuff.无情)) return new CheckResult(false, "无情中不打");
+            if (Core.Me.HasStatus(GunbreakerBuff.无情)) return new CheckResult(false, "无情中不打");
 
             if (JobGaugeHelper.GNB.Ammo == 3 &&
                 ActionHelper.GetLastComboID() == GunbreakerSkill.残暴弹) return new CheckResult(true, "溢出时打");
@@ -55,11 +54,11 @@ public class 爆发击 : IDecisionResolver
             return new CheckResult(false, "不打");
         }
 
-        if (player.Level >= 88 && player.Level < 100)
+        if (Core.Me.Level >= 88 && Core.Me.Level < 100)
         {
-            if (GnbFrameCache.HasStatus(GunbreakerBuff.无情))
+            if (Core.Me.HasStatus(GunbreakerBuff.无情))
             {
-                if  (ActionHelper.GetActionCharges(GnbFrameCache.GetAdjustedActionId(GunbreakerSkill.烈牙)) >=1) return new CheckResult(false, "保留子弹不打爆发击");
+                if  (ActionHelper.GetActionCharges(ActionHelper.GetAdjustedActionId(GunbreakerSkill.烈牙)) >=1) return new CheckResult(false, "保留子弹不打爆发击");
                 if (JobGaugeHelper.GNB.Ammo == 1 && ((GunbreakerHelper.技能冷却能否在buff剩余时间内结束(GunbreakerBuff.无情, GunbreakerSkill.烈牙)&&aoeCount < 4)||GunbreakerHelper.技能冷却能否在buff剩余时间内结束(GunbreakerBuff.无情, GunbreakerSkill.倍攻))) return new CheckResult(false, "保留子弹不打爆发击");
             }
             else{
@@ -71,20 +70,20 @@ public class 爆发击 : IDecisionResolver
             return new CheckResult(false, "不打");
         }
 
-        if (player.Level < 88)
+        if (Core.Me.Level < 88)
         {
             if (JobGaugeHelper.GNB.Ammo == 2 &&
                 ActionHelper.GetLastComboID() == GunbreakerSkill.残暴弹) return new CheckResult(true, "溢出时打");
             if (JobGaugeHelper.GNB.Ammo == 2 &&
                 ActionHelper.GetLastComboID() == GunbreakerSkill.恶魔切) return new CheckResult(true, "溢出时打");
-            if (GnbFrameCache.HasStatus(GunbreakerBuff.无情)&&player.Level >= 60)
+            if (Core.Me.HasStatus(GunbreakerBuff.无情)&&Core.Me.Level >= 60)
             {
                 if (JobGaugeHelper.GNB.Ammo == 1 && GunbreakerHelper.技能冷却能否在buff剩余时间内结束(GunbreakerBuff.无情, GunbreakerSkill.烈牙)) return new CheckResult(false, "保留子弹不打爆发击");
-                if  (ActionHelper.GetActionCharges(GnbFrameCache.GetAdjustedActionId(GunbreakerSkill.烈牙)) >=1) return new CheckResult(false, "保留子弹不打爆发击");
+                if  (ActionHelper.GetActionCharges(ActionHelper.GetAdjustedActionId(GunbreakerSkill.烈牙)) >=1) return new CheckResult(false, "保留子弹不打爆发击");
                 return new CheckResult(true, "无情中打爆发击");
             }
 
-            if (GnbFrameCache.HasStatus(GunbreakerBuff.无情) && player.Level < 60&&ActionHelper.GetActionCharges(GnbFrameCache.GetAdjustedActionId(GunbreakerSkill.烈牙)) <1) return new CheckResult(true, "无情中打");
+            if (Core.Me.HasStatus(GunbreakerBuff.无情) && Core.Me.Level < 60&&ActionHelper.GetActionCharges(ActionHelper.GetAdjustedActionId(GunbreakerSkill.烈牙)) <1) return new CheckResult(true, "无情中打");
         }
 
         return new CheckResult(false, "不打");

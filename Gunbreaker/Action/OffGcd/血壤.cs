@@ -32,7 +32,7 @@ public class 血壤 : IDecisionResolver
         {
             return new CheckResult(false, "晶壤已满");
         }
-        if (Core.Me != null && GnbFrameCache.HasStatus(GunbreakerBuff.心有灵狮))
+        if (Core.Me != null && Core.Me.HasStatus(GunbreakerBuff.心有灵狮))
         {
             return new CheckResult(false, "已有狮心预备");
         }

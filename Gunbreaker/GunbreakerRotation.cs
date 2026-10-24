@@ -20,7 +20,7 @@ namespace Nag0mi.Gunbreaker;
 
 // 这个RotationMetadata需要实现！
 
-[RotationMetadata((uint)Job.GNB, "绝枪战士", "Nag0mi", "1.18",
+[RotationMetadata((uint)Job.GNB, "绝枪战士", "Nag0mi", "1.19",
     ContentScope = AcrContentScope.HighEnd)]
 public partial class GunbreakerRotation : IRotation, IRotationLifecycle, IDisposable
 {
@@ -192,7 +192,7 @@ public partial class GunbreakerRotation : IRotation, IRotationLifecycle, IDispos
         // 遍历所有Alway解析器
         foreach (var resolver in _alwaysResolvers)
         {
-            if (resolver.CheckCached().Success)
+            if (resolver.Check().Success)
             {
                 // 找到第一个满足条件的，返回它的决策结果
                 return resolver.GetAction();
@@ -207,7 +207,7 @@ public partial class GunbreakerRotation : IRotation, IRotationLifecycle, IDispos
         // 遍历所有GCD解析器
         foreach (var resolver in _gcdResolvers)
         {
-            if (resolver.CheckCached().Success)
+            if (resolver.Check().Success)
             {
                 // 找到第一个满足条件的，返回它的决策结果
                 return resolver.GetAction();
@@ -222,7 +222,7 @@ public partial class GunbreakerRotation : IRotation, IRotationLifecycle, IDispos
         // 遍历所有oGCD解析器 同上
         foreach (var resolver in _offGcdResolvers)
         {
-            if (resolver.CheckCached().Success)
+            if (resolver.Check().Success)
             {
                 return resolver.GetAction();
             }
@@ -239,11 +239,11 @@ public partial class GunbreakerRotation : IRotation, IRotationLifecycle, IDispos
         // Always状态列表
         foreach (var resolver in _alwaysResolvers)
         {
-            var result = resolver.CheckCached();
+            var result = resolver.Check();
             
             RotationManager.AlwaysSolverStatus.Add(new SolverStatus
             {
-                Name = resolver.NameCached(),
+                Name = resolver.GetType().Name,
                 Success = result.Success,
                 Message = result.Message
             });
@@ -252,11 +252,11 @@ public partial class GunbreakerRotation : IRotation, IRotationLifecycle, IDispos
         // GCD状态列表
         foreach (var resolver in _gcdResolvers)
         {
-            var result = resolver.CheckCached();
+            var result = resolver.Check();
             
             RotationManager.GcdSolverStatus.Add(new SolverStatus
             {
-                Name = resolver.NameCached(),
+                Name = resolver.GetType().Name,
                 Success = result.Success,
                 Message = result.Message
             });
@@ -265,11 +265,11 @@ public partial class GunbreakerRotation : IRotation, IRotationLifecycle, IDispos
         // OGCD状态列表
         foreach (var resolver in _offGcdResolvers)
         {
-            var result = resolver.CheckCached();
+            var result = resolver.Check();
             
             RotationManager.OffGcdSolverStatus.Add(new SolverStatus
             {
-                Name = resolver.NameCached(),
+                Name = resolver.GetType().Name,
                 Success = result.Success,
                 Message = result.Message
             });

@@ -11,7 +11,7 @@ internal static class OpenerCountdown
 {
     public static void Register(CountDownHandler countdownHandler)
     {
-        if (Core.Me?.HasStatus(GunbreakerBuff.王室亲卫) == true && GunbreakerSettings.Instance.ST && QT.QTGET(GunbreakerQT.强制盾姿))
+        if (Core.Me.HasStatus(GunbreakerBuff.王室亲卫) && GunbreakerSettings.Instance.ST && QT.QTGET(GunbreakerQT.强制盾姿))
             countdownHandler.AddAction(
                 4500,
                 new PAction(GunbreakerSkill.关盾姿, ActionType.OffGcd, ActionTargetType.Self)
@@ -19,7 +19,7 @@ internal static class OpenerCountdown
                     RequiresVerification = true
                 });
 
-        if (Core.Me?.HasStatus(GunbreakerBuff.王室亲卫) == true && !GunbreakerSettings.Instance.ST && QT.QTGET(GunbreakerQT.强制盾姿))
+        if (Core.Me.HasStatus(GunbreakerBuff.王室亲卫) && !GunbreakerSettings.Instance.ST && QT.QTGET(GunbreakerQT.强制盾姿))
             countdownHandler.AddAction(
                 4500,
                 new PAction(GunbreakerSkill.盾姿, ActionType.OffGcd, ActionTargetType.Self)
